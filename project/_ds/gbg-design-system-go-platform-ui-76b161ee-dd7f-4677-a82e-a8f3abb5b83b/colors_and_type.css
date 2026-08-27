@@ -1,0 +1,264 @@
+/**
+ * GBG Go — design tokens as CSS custom properties.
+ *
+ * Mirrors `GBG Go/src/theme.ts` exactly. The MUI theme is the source of
+ * truth for the app; this file is the source of truth for design artefacts
+ * that don't go through MUI (slides, mocks, standalone HTML).
+ *
+ * Naming convention:
+ *   --gbg-<ramp>-<stop>     brand ramp step (Figma-canonical)
+ *   --gbg-<semantic>        MUI-semantic alias (primary, error, text-*)
+ *   --gbg-surface-<name>    surface roles (page, sidebar, selected…)
+ *   --gbg-radius-<name>     radius tokens
+ *   --gbg-shadow-card       the only shadow in the system
+ *   --gbg-duration-*        motion tokens
+ */
+
+@font-face {
+  font-family: "DM Sans";
+  src: url("fonts/DMSans-VariableFont_opsz_wght.ttf") format("truetype-variations"),
+       url("fonts/DMSans-VariableFont_opsz_wght.ttf") format("truetype");
+  font-weight: 100 1000;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ---------- Charcoal (neutrals) ---------- */
+  --gbg-charcoal-50: #F6F7F9;
+  --gbg-charcoal-100: #ECEDF1;
+  --gbg-charcoal-200: #E3E3E8;
+  --gbg-charcoal-300: #ADADB8;
+  --gbg-charcoal-400: #787887;
+  --gbg-charcoal-500: #3B3B44;
+  --gbg-charcoal-600: #1F1F26;
+  --gbg-charcoal-700: #0C0C0E;
+
+  /* ---------- Hyacinth (brand blue) ---------- */
+  --gbg-hyacinth-50: #F5F5FC;
+  --gbg-hyacinth-100: #E5E5FF;
+  --gbg-hyacinth-200: #B2B2FF;
+  --gbg-hyacinth-300: #7E7EFF;
+  --gbg-hyacinth-400: #4D4DFF;
+  --gbg-hyacinth-500: #3333E6;
+  --gbg-hyacinth-600: #2424B8;
+  --gbg-hyacinth-700: #12123C;
+
+  /* ---------- Hot Peach (accent) ---------- */
+  --gbg-peach-50: #FFF6F3;
+  --gbg-peach-100: #FFEDE5;
+  --gbg-peach-200: #FFDBCC;
+  --gbg-peach-300: #FFC2A8;
+  --gbg-peach-400: #FF9D73;
+  --gbg-peach-500: #CC6133;
+  --gbg-peach-600: #933E1A;
+  --gbg-peach-700: #461B08;
+
+  /* ---------- Functional ---------- */
+  --gbg-red-100: #FFEBEB;
+  --gbg-red-500: #F55757;
+  --gbg-red-700: #BF4040;
+
+  --gbg-green-100: #C7EBD5;
+  --gbg-green-500: #2BA65C;
+  --gbg-green-700: #219C4C;
+
+  --gbg-orange-100: #FFEFDF;
+  --gbg-orange-500: #FC9532;
+  --gbg-orange-700: #D87212;
+
+  /* ---------- Outcome swatches (product concept) ---------- */
+  --gbg-outcome-red: #FF8282;
+  --gbg-outcome-orange: #FFAA58;
+  --gbg-outcome-yellow: #FFD450;
+  --gbg-outcome-grey: #C8C8C8;
+  --gbg-outcome-green: #74D79D;
+  --gbg-outcome-lightGreen: #BEF09C;
+  --gbg-outcome-blue: #A5B4FF;
+  --gbg-outcome-purple: #BB9EFF;
+
+  /* ---------- MUI-semantic aliases ---------- */
+  --gbg-primary-light: var(--gbg-hyacinth-300);
+  --gbg-primary: var(--gbg-hyacinth-400);
+  --gbg-primary-dark: var(--gbg-hyacinth-500);
+
+  --gbg-error: var(--gbg-red-500);
+  --gbg-warning: var(--gbg-orange-500);
+  --gbg-success: var(--gbg-green-500);
+  --gbg-info: var(--gbg-hyacinth-400);
+
+  --gbg-text-primary: var(--gbg-charcoal-700);
+  --gbg-text-secondary: var(--gbg-charcoal-400);
+  --gbg-text-body: var(--gbg-charcoal-500);
+  --gbg-text-disabled: var(--gbg-charcoal-300);
+  --gbg-divider: var(--gbg-charcoal-200);
+
+  /* ---------- Surfaces ---------- */
+  --gbg-surface-page: #FFFFFF;
+  --gbg-surface-raised: #FFFFFF;
+  --gbg-surface-subtle: var(--gbg-charcoal-50);
+  --gbg-surface-sidebar: var(--gbg-hyacinth-50);
+  --gbg-surface-selected: var(--gbg-hyacinth-100);
+
+  /* ---------- Shape ---------- */
+  --gbg-radius-none: 0px;
+  --gbg-radius-sm: 4px;   /* buttons, inputs, chips, badges, most cards */
+  --gbg-radius-md: 8px;   /* surface cards, nav items */
+  --gbg-radius-lg: 12px;  /* dialogs */
+  --gbg-radius-pill: 999px;
+
+  /* ---------- Elevation ---------- */
+  --gbg-shadow-card: 2px 4px 10px 0 rgba(0, 0, 0, 0.10);
+
+  /* ---------- Spacing (8px base) ---------- */
+  --gbg-space-0: 0px;
+  --gbg-space-1: 8px;
+  --gbg-space-2: 16px;
+  --gbg-space-3: 24px;
+  --gbg-space-4: 32px;
+  --gbg-space-5: 40px;
+  --gbg-space-6: 48px;
+  --gbg-space-7: 56px;
+  --gbg-space-8: 64px;
+
+  /* ---------- Motion ---------- */
+  --gbg-duration-fast: 120ms; /* @kind other */
+  --gbg-duration-default: 180ms; /* @kind other */
+  --gbg-ease: ease; /* @kind other */
+
+  /* ---------- Type ---------- */
+  --gbg-font-stack: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Font sizes (rem-based; 1rem = 16px) */
+  --gbg-size-h1: 2rem;       /* 32 */
+  --gbg-size-h2: 1.75rem;    /* 28 */
+  --gbg-size-h3: 1.375rem;   /* 22 — Heading/Large */
+  --gbg-size-h4: 1.125rem;   /* 18 — Heading/Medium */
+  --gbg-size-h5: 1rem;       /* 16 — Heading/Small */
+  --gbg-size-h6: 0.875rem;   /* 14 — Heading/X Small, ExtraBold */
+  --gbg-size-body1: 0.875rem; /* 14 — Body/Medium */
+  --gbg-size-body2: 0.75rem;  /* 12 — Body/Small */
+  --gbg-size-eyebrow: 0.6875rem; /* 11 */
+
+  --gbg-weight-regular: 400;
+  --gbg-weight-medium: 500;
+  --gbg-weight-semibold: 600;
+  --gbg-weight-bold: 700;
+  --gbg-weight-extrabold: 800;
+
+  --gbg-leading: 1.5;
+  --gbg-tracking-eyebrow: 0.08em;
+}
+
+/* ---------- Semantic selectors ---------- */
+/* Use these when styling a plain HTML document against the system (slides,
+   standalone previews). For MUI-rendered app code, use `<Typography variant="…">`. */
+
+html, body {
+  font-family: var(--gbg-font-stack);
+  font-size: 16px;
+  color: var(--gbg-text-primary);
+  background: var(--gbg-surface-page);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-size: var(--gbg-size-body1);
+  line-height: var(--gbg-leading);
+  font-weight: var(--gbg-weight-regular);
+}
+
+h1, .gbg-h1 {
+  font-family: var(--gbg-font-stack);
+  font-size: var(--gbg-size-h1);
+  font-weight: var(--gbg-weight-extrabold);
+  line-height: var(--gbg-leading);
+  color: var(--gbg-text-primary);
+  margin: 0;
+}
+
+h2, .gbg-h2 {
+  font-family: var(--gbg-font-stack);
+  font-size: var(--gbg-size-h2);
+  font-weight: var(--gbg-weight-extrabold);
+  line-height: var(--gbg-leading);
+  color: var(--gbg-text-primary);
+  margin: 0;
+}
+
+h3, .gbg-h3 {
+  font-family: var(--gbg-font-stack);
+  font-size: var(--gbg-size-h3);
+  font-weight: var(--gbg-weight-extrabold);
+  line-height: var(--gbg-leading);
+  color: var(--gbg-text-primary);
+  margin: 0;
+}
+
+h4, .gbg-h4 {
+  font-family: var(--gbg-font-stack);
+  font-size: var(--gbg-size-h4);
+  font-weight: var(--gbg-weight-extrabold);
+  line-height: var(--gbg-leading);
+  color: var(--gbg-text-primary);
+  margin: 0;
+}
+
+h5, .gbg-h5 {
+  font-family: var(--gbg-font-stack);
+  font-size: var(--gbg-size-h5);
+  font-weight: var(--gbg-weight-extrabold);
+  line-height: var(--gbg-leading);
+  color: var(--gbg-text-primary);
+  margin: 0;
+}
+
+h6, .gbg-h6 {
+  font-family: var(--gbg-font-stack);
+  font-size: var(--gbg-size-h6);
+  font-weight: var(--gbg-weight-extrabold);
+  line-height: var(--gbg-leading);
+  color: var(--gbg-text-primary);
+  margin: 0;
+}
+
+p, .gbg-body1 {
+  font-family: var(--gbg-font-stack);
+  font-size: var(--gbg-size-body1);
+  line-height: var(--gbg-leading);
+  font-weight: var(--gbg-weight-regular);
+  color: var(--gbg-text-body);
+  margin: 0;
+}
+
+.gbg-body2 {
+  font-size: var(--gbg-size-body2);
+  color: var(--gbg-text-body);
+}
+
+.gbg-caption {
+  font-size: var(--gbg-size-body2);
+  color: var(--gbg-text-secondary);
+}
+
+.gbg-eyebrow, .gbg-overline {
+  font-size: var(--gbg-size-eyebrow);
+  font-weight: var(--gbg-weight-semibold);
+  line-height: var(--gbg-leading);
+  letter-spacing: var(--gbg-tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--gbg-text-secondary);
+}
+
+a, .gbg-link {
+  color: var(--gbg-primary);
+  text-decoration: underline;
+  text-decoration-color: var(--gbg-primary);
+  font-weight: var(--gbg-weight-semibold);
+}
+a:hover, .gbg-link:hover { color: var(--gbg-primary-light); }
+
+button { font-family: inherit; }
+
+::selection { background: var(--gbg-hyacinth-200); }

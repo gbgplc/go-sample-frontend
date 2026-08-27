@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/gbg-design-system-go-platform-ui-76b161ee-dd7f-4677-a82e-a8f3abb5b83b/colors_and_type.css">
+<script src="_ds/gbg-design-system-go-platform-ui-76b161ee-dd7f-4677-a82e-a8f3abb5b83b/_ds_bundle.js"></script>
+<script src="./doc-page.js"></script>
+<style>
+doc-page:not(:defined){visibility:hidden}
+</style>
+</helmet>
+<doc-page margin="0.85in">
+
+  <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--gbg-charcoal-200);padding-bottom:10px;margin-bottom:28px">
+    <span style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gbg-charcoal-400)">GBG Go · engineering handoff</span>
+    <span style="font-size:11px;color:var(--gbg-charcoal-400)">Draft 1 · 26 Aug 2026</span>
+  </div>
+
+  <h1 style="font-size:30px;margin-bottom:12px">Market onboarding applications — front-end handoff</h1>
+  <p style="font-size:15px;line-height:1.65;color:var(--gbg-charcoal-500);margin-bottom:28px">Three standalone customer-facing onboarding applications — banking, healthcare and online gaming — each driving a published GBG Go journey through a thin backend proxy. This document defines the screens, the module chain and state machine per market, and the REST contract that both the Java and the TypeScript microservice must implement identically.</p>
+
+  <p style="font-size:13px;line-height:1.6;background:var(--gbg-hyacinth-50);border-left:3px solid var(--gbg-hyacinth-400);padding:14px 16px;margin-bottom:32px">Scope note. The visual designs live in the companion prototype, <em>Market Onboarding Journeys</em>. That file is the reference for layout, copy and responsive behaviour; this document is the reference for structure and integration. Where the two disagree, the prototype wins on appearance and this document wins on data flow.</p>
+
+  <h2 style="font-size:22px;margin:36px 0 12px">1. Architecture</h2>
+  <p style="margin-bottom:14px">Three separate front-end applications, deployed independently, sharing no runtime. Each talks to one backend microservice over REST. Two interchangeable implementations of that service exist — one Java, one TypeScript — serving the same contract, so a front end must not be able to tell which it is speaking to.</p>
+
+  <div style="border:1px solid var(--gbg-charcoal-200);border-radius:8px;padding:20px 22px;margin:20px 0 24px;break-inside:avoid">
+    <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gbg-charcoal-400);margin-bottom:14px">Request path</div>
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;line-height:1.5">
+      <div><strong>Browser</strong> — one of three apps. Renders screens, collects input, never holds a Go credential.</div>
+      <div style="color:var(--gbg-charcoal-300)">↓ REST over HTTPS, JSON</div>
+      <div><strong>Onboarding service</strong> — Java or TypeScript. Holds the Go client credentials, mints and refreshes access tokens, forwards interaction traffic, keeps the session-to-instance mapping.</div>
+      <div style="color:var(--gbg-charcoal-300)">↓ GBG Go API v2</div>
+      <div><strong>GBG Go</strong> — published journey per market, identified by resource ID.</div>
+    </div>
+  </div>
+
+  <p style="margin-bottom:14px"><strong>Integration model: thin proxy.</strong> The front end drives Go's interaction loop. It starts a journey, fetches the current interaction to discover what data is outstanding, renders a form for it, submits, and repeats until the journey status leaves <code style="font-size:12px;background:var(--gbg-charcoal-50);padding:1px 5px;border-radius:3px">InProgress</code>. The service adds authentication, request shaping and audit logging, and forwards. It does not model the journey itself.</p>
+
+  <p style="margin-bottom:14px">The consequence worth stating plainly: <strong>screen order comes from the journey, not from the client.</strong> The step sequences in section 4 describe what a published journey currently produces — they are expected output, not a hard-coded route table. A journey edited in the Go builder changes the flow with no front-end release. Build the router off the interaction response.</p>
+
+  <h3 style="font-size:18px;margin:28px 0 10px">Division of responsibility</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:8px">
+    <thead>
+      <tr>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700;width:33%">Front end</th>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700;width:33%">Microservice</th>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700">Go platform</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Render fields from the interaction schema; client-side format validation; capture surfaces; progress and stage display; the result and record screens</td>
+        <td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Go client credentials; token mint and refresh; session store; resource-ID selection per market; retry and idempotency; audit log; webhook receipt</td>
+        <td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Journey definition; module execution; outcome and decision evaluation; branching; the authoritative journey state</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="font-size:12px;color:var(--gbg-charcoal-400);margin-bottom:8px">Neither a Go access token nor a client secret may reach the browser under any circumstance.</p>
+
+  <h2 style="font-size:22px;margin:36px 0 12px">2. REST contract</h2>
+  <p style="margin-bottom:16px">All paths are relative to a per-app base URL, supplied to the front end at build time as a single configuration value. JSON in and out, <code style="font-size:12px;background:var(--gbg-charcoal-50);padding:1px 5px;border-radius:3px">application/json</code> except where noted. Both service implementations must match this contract to the field name.</p>
+
+  <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:18px">
+    <thead>
+      <tr>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700;width:38%">Endpoint</th>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700">Purpose and shape</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding:9px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top"><code style="font-size:12px">POST /v1/sessions</code></td>
+        <td style="padding:9px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Start a journey. Body carries an optional <code style="font-size:12px">prefill</code> object of known subject data. The service picks the resource ID from its own configuration — the client never names a journey. Returns <code style="font-size:12px">sessionId</code>, <code style="font-size:12px">status</code>, and the first <code style="font-size:12px">interaction</code> inline to save a round trip.</td>
+      </tr>
+      <tr>
+        <td style="padding:9px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top"><code style="font-size:12px">GET /v1/sessions/{id}/interaction</code></td>
+        <td style="padding:9px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">The current interaction: <code style="font-size:12px">interactionId</code>, <code style="font-size:12px">collects[]</code>, <code style="font-size:12px">outstanding[]</code>, and the field schema for each domain element. This is the front end's routing signal — what it returns determines which screen renders.</td>
+      </tr>
+      <tr>
+        <td style="padding:9px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top"><code style="font-size:12px">POST /v1/sessions/{id}/interaction</code></td>
+        <td style="padding:9px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Submit collected data for the named interaction. Must be idempotent on <code style="font-size:12px">interactionId</code> — a double submit returns the same result rather than advancing twice. Returns the next interaction, or a terminal status.</td>
+      </tr>
+      <tr>
+        <td style="padding:9px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top"><code style="font-size:12px">GET /v1/sessions/{id}/state</code></td>
+        <td style="padding:9px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Journey status and, once reached, the decision. Polled while a processing screen is showing. Status values mirror Go: <code style="font-size:12px">InProgress</code>, <code style="font-size:12px">PendingInput</code>, <code style="font-size:12px">Completed</code>.</td>
+      </tr>
+      <tr>
+        <td style="padding:9px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top"><code style="font-size:12px">GET /v1/sessions/{id}/record</code></td>
+        <td style="padding:9px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">The verification record shown on the final screen — journey name and version, reference, timestamps, elapsed time, per-module outcome and duration, deciding module where the outcome was not a straight pass. Composition is a policy decision; see section 6.</td>
+      </tr>
+      <tr>
+        <td style="padding:9px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top"><code style="font-size:12px">POST /v1/sessions/{id}/attachments</code></td>
+        <td style="padding:9px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Multipart upload for supplementary documents — proof of address, power of attorney. Returns an attachment reference to include in the next interaction submission.</td>
+      </tr>
+      <tr>
+        <td style="padding:9px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top"><code style="font-size:12px">GET /v1/config</code></td>
+        <td style="padding:9px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Per-app presentation configuration: brand name, accent colour, help contact, accepted document types, locale. Keeps brand values out of the front-end bundle so a deployment can be re-pointed without a rebuild.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-size:18px;margin:24px 0 10px">Error envelope</h3>
+  <p style="margin-bottom:14px">One shape for every failure, from both implementations: an HTTP status, a stable machine <code style="font-size:12px;background:var(--gbg-charcoal-50);padding:1px 5px;border-radius:3px">code</code>, a <code style="font-size:12px;background:var(--gbg-charcoal-50);padding:1px 5px;border-radius:3px">message</code> safe to show a customer, an optional <code style="font-size:12px;background:var(--gbg-charcoal-50);padding:1px 5px;border-radius:3px">fields</code> map for per-field validation errors, and a <code style="font-size:12px;background:var(--gbg-charcoal-50);padding:1px 5px;border-radius:3px">retryable</code> boolean. The front end decides its treatment from <code style="font-size:12px;background:var(--gbg-charcoal-50);padding:1px 5px;border-radius:3px">code</code>, never by parsing the message.</p>
+
+  <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:8px">
+    <thead>
+      <tr>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700;width:26%">Code</th>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700;width:14%">HTTP</th>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700">Front-end treatment</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100)"><code style="font-size:12px">VALIDATION_FAILED</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100)">422</td><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100)">Field-level errors on the current screen, no navigation</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100)"><code style="font-size:12px">SESSION_EXPIRED</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100)">410</td><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100)">Restart screen. Say what happened and offer to begin again.</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100)"><code style="font-size:12px">INTERACTION_STALE</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100)">409</td><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100)">Re-fetch the interaction and re-render — the journey moved on</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100)"><code style="font-size:12px">UPSTREAM_UNAVAILABLE</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100)">503</td><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100)">Retry with backoff behind the processing screen; surface after three attempts</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100)"><code style="font-size:12px">RATE_LIMITED</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100)">429</td><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100)">Honour <code style="font-size:12px">Retry-After</code>; keep the customer on the current screen</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:12px;color:var(--gbg-charcoal-400)">Error copy follows the Go voice: say what happened and what to do next. Never blame the customer, never use the word "please".</p>
+
+  <h2 style="font-size:22px;margin:36px 0 12px">3. Shared state machine</h2>
+  <p style="margin-bottom:14px">All three applications run the same seven states. Market differences live in the journey, not in the client.</p>
+
+  <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:8px">
+    <thead>
+      <tr>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700;width:22%">State</th>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700">Behaviour and exit</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top"><strong>idle</strong></td><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Intro screen. Exit on start → <code style="font-size:12px">POST /v1/sessions</code>.</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top"><strong>starting</strong></td><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Awaiting session creation. On success store <code style="font-size:12px">sessionId</code> and move to collecting with the inline first interaction.</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top"><strong>collecting</strong></td><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Rendering a screen from the interaction schema. Exit on submit → submitting. Back is a client-side move within an interaction only; it must not attempt to reverse a submitted one.</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top"><strong>submitting</strong></td><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Posting the interaction. Next interaction → collecting. Terminal status → decided. <code style="font-size:12px">VALIDATION_FAILED</code> → back to collecting with field errors.</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top"><strong>processing</strong></td><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">No outstanding data, no decision yet. Poll <code style="font-size:12px">/state</code>. Show module progress. Cap the wait, then fall through to a holding screen rather than spinning indefinitely.</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top"><strong>decided</strong></td><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Result screen, branching on decision: pass, refer or decline. Fetch <code style="font-size:12px">/record</code> for the verification record panel.</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top"><strong>failed</strong></td><td style="padding:8px 10px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Unrecoverable transport or session error. Offer a restart. Distinct from a declined decision, which is a successful journey with a negative outcome.</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:12px;color:var(--gbg-charcoal-400)">A referral is not a failure state. It is a decision that leaves the journey open, sometimes with a further interaction — the banking proof-of-address flow returns to collecting after a referral.</p>
+
+  <h2 style="font-size:22px;margin:36px 0 12px">4. Screen inventory by market</h2>
+  <p style="margin-bottom:16px">Per app: the screens the current journey produces, the domain elements each collects, and the modules that consume them. Screen kinds are the front end's render modes — <em>intro</em>, <em>form</em>, <em>choice</em>, <em>capture</em>, <em>upload</em>, <em>consent</em>, <em>processing</em>, <em>result</em>. Only these eight need building; every screen in all three apps is one of them.</p>
+
+  <h3 style="font-size:18px;margin:26px 0 10px">Banking — current account opening</h3>
+  <p style="font-size:12.5px;color:var(--gbg-charcoal-400);margin-bottom:10px">Full KYC and AML. Linear processing. Two outcomes designed: straight-through, and referred on address mismatch.</p>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px">
+    <thead>
+      <tr>
+        <th style="text-align:left;padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700;width:20%">Screen</th>
+        <th style="text-align:left;padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700;width:12%">Kind</th>
+        <th style="text-align:left;padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700;width:30%">Collects</th>
+        <th style="text-align:left;padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700">Modules</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Open an account</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">intro</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">—</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">—</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Your details</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">form</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">FullName, DateOfBirth, Address, MobileNumber</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Data Verification</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Scan your photo ID</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">capture</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">PrimaryDocument</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Document Classification, Document Authentication, Document Extraction, NFC Chip Authentication</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Take a selfie</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">capture</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">SelfieImage</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Liveness Verification, Facematch Verification</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Running your checks</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">processing</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">—</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">PEPs and Sanctions, Financial Screening, GBG Trust</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Decision</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">result</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">—</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">—</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Proof of address <span style="color:var(--gbg-orange-700)">(referral branch)</span></td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">upload</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">ProofOfAddressDocument</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Proof of Address Extraction, Document Attachments</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">In review <span style="color:var(--gbg-orange-700)">(referral branch)</span></td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">result</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">—</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">—</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-size:18px;margin:26px 0 10px">Healthcare — patient record access</h3>
+  <p style="font-size:12.5px;color:var(--gbg-charcoal-400);margin-bottom:10px">Adaptive processing. Branches on who is registering. Adds an explicit consent screen and a manual authority review the platform cannot decide.</p>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px">
+    <thead>
+      <tr>
+        <th style="text-align:left;padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700;width:20%">Screen</th>
+        <th style="text-align:left;padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700;width:12%">Kind</th>
+        <th style="text-align:left;padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700;width:30%">Collects</th>
+        <th style="text-align:left;padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700">Modules</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Verify to see your record</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">intro</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">—</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">—</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Who are you registering?</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">choice</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">RegistrationCapacity</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">— (drives an evaluation branch)</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Patient details <span style="color:var(--gbg-charcoal-400)">(carer branch)</span></td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">form</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">PatientName, PatientDateOfBirth, PatientPostcode, Relationship</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Data Verification</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Your details</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">form</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">FullName, DateOfBirth, Postcode, NationalHealthNumber</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Data Verification</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">How would you like to verify?</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">choice</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">VerificationRoute</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Digital Identity Insights</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Scan your photo ID</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">capture</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">PrimaryDocument</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Document Authentication, Document Extraction</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Take a selfie</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">capture</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">SelfieImage</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Liveness Verification, Facematch Verification</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Proof of authority <span style="color:var(--gbg-charcoal-400)">(carer branch)</span></td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">upload</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">AuthorityDocument</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Document Attachments</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Share your record</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">consent</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">ConsentGrants</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">— (recorded, not verified)</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Decision</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">result</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">—</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">—</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:12px;color:var(--gbg-charcoal-400);margin-bottom:8px">Consent grants are a customer record, not a verification input. Decide whether they are stored in Go as a domain element or held in the practice's own system — it affects who can later prove what was agreed.</p>
+
+  <h3 style="font-size:18px;margin:26px 0 10px">Online gaming — player sign-up</h3>
+  <p style="font-size:12.5px;color:var(--gbg-charcoal-400);margin-bottom:10px">Adaptive, silent-first. Data and age checks run without any document. Documents appear only as a step-up when data is inconclusive. Three outcomes designed: instant pass, step-up, and jurisdiction block.</p>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px">
+    <thead>
+      <tr>
+        <th style="text-align:left;padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700;width:20%">Screen</th>
+        <th style="text-align:left;padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700;width:12%">Kind</th>
+        <th style="text-align:left;padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700;width:30%">Collects</th>
+        <th style="text-align:left;padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-200);font-weight:700">Modules</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Create your account</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">form</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">EmailAddress, MobileNumber, DateOfBirth, Postcode</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Age Verification, Data Verification, IP Geolocation, GBG Trust</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Checking your details</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">processing</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">—</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">—</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">One quick check <span style="color:var(--gbg-orange-700)">(step-up branch)</span></td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">intro</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">—</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">—</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Scan your photo ID <span style="color:var(--gbg-orange-700)">(step-up branch)</span></td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">capture</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">PrimaryDocument</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Document Classification, Document Authentication, Document Extraction</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Take a selfie <span style="color:var(--gbg-orange-700)">(step-up branch)</span></td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">capture</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">SelfieImage</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Liveness Verification, Facematch Verification</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Set your deposit limit</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">choice</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">DepositLimit</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">— (operator record)</td></tr>
+      <tr><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">Decision</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">result</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">—</td><td style="padding:7px 9px;border-bottom:1px solid var(--gbg-charcoal-100);vertical-align:top">—</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:12px;color:var(--gbg-charcoal-400)">The deposit limit is a licence-condition record for the operator, not a GBG check. It does not belong in the journey unless you want it in the audit trail — worth deciding deliberately.</p>
+
+  <h2 style="font-size:22px;margin:36px 0 12px">5. Mock mode</h2>
+  <p style="margin-bottom:14px">Each front end must run with no backend present, so the applications can be demonstrated and tested before either service is finished. One configuration flag switches the transport layer between live REST and a canned fixture set; nothing above the transport layer knows which is active.</p>
+  <p style="margin-bottom:14px">Fixtures should cover every designed outcome, not just the happy path: banking straight-through and referral, healthcare patient and carer, gaming instant pass, step-up and jurisdiction block. Add fixtures for the error envelope too — a stale interaction, an expired session and an upstream outage each need a demonstrable screen. The same fixture set doubles as the contract test both service implementations run against.</p>
+
+  <h2 style="font-size:22px;margin:36px 0 12px">6. Open decisions</h2>
+  <p style="margin-bottom:16px">Six items that need an owner before build. Each changes the contract or the screens.</p>
+
+  <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:8px">
+    <div style="border:1px solid var(--gbg-charcoal-200);border-radius:8px;padding:14px 16px;break-inside:avoid">
+      <div style="font-size:13px;font-weight:700;margin-bottom:4px">Front-end authentication to the service</div>
+      <div style="font-size:12.5px;line-height:1.55;color:var(--gbg-charcoal-500)">Undecided. Recommendation: a first-party HTTP-only session cookie set by the service on <code style="font-size:12px">POST /v1/sessions</code>, scoped to the session and short-lived. It keeps the session identifier out of URLs and browser history, needs no identity provider for an anonymous onboarding flow, and works the same in both implementations. If a journey must be resumable across devices, a signed resume link is the alternative — that is a different threat model and needs a decision of its own.</div>
+    </div>
+    <div style="border:1px solid var(--gbg-charcoal-200);border-radius:8px;padding:14px 16px;break-inside:avoid">
+      <div style="font-size:13px;font-weight:700;margin-bottom:4px">Prefill versus non-prefill</div>
+      <div style="font-size:12.5px;line-height:1.55;color:var(--gbg-charcoal-500)">If an app already holds name, date of birth and address, sending them at start and removing those domain elements from the interaction group deletes the Details screen entirely. Gaming and healthcare are the likely candidates. Decide per app, because it changes the screen count in section 4.</div>
+    </div>
+    <div style="border:1px solid var(--gbg-charcoal-200);border-radius:8px;padding:14px 16px;break-inside:avoid">
+      <div style="font-size:13px;font-weight:700;margin-bottom:4px">Capture SDK integration</div>
+      <div style="font-size:12.5px;line-height:1.55;color:var(--gbg-charcoal-500)">Document and selfie surfaces are placeholders in the current designs. Real capture needs GBG's Web SDK mounted in the page, and it owns its own camera UI — so the surrounding chrome is ours and the viewfinder is not. Confirm which SDK version, and re-review those two screens once it is in.</div>
+    </div>
+    <div style="border:1px solid var(--gbg-charcoal-200);border-radius:8px;padding:14px 16px;break-inside:avoid">
+      <div style="font-size:13px;font-weight:700;margin-bottom:4px">Composition of the verification record</div>
+      <div style="font-size:12.5px;line-height:1.55;color:var(--gbg-charcoal-500)">The record panel on the final screen is a design proposal, not an existing payload. Instance reference, timestamps, elapsed time, module outcomes and the decision all exist in Go. What a customer should see — particularly the deciding module on a referral or decline — is a compliance judgement. Settle it before building <code style="font-size:12px">/record</code>, since it defines that endpoint.</div>
+    </div>
+    <div style="border:1px solid var(--gbg-charcoal-200);border-radius:8px;padding:14px 16px;break-inside:avoid">
+      <div style="font-size:13px;font-weight:700;margin-bottom:4px">Decision delivery to your own systems</div>
+      <div style="font-size:12.5px;line-height:1.55;color:var(--gbg-charcoal-500)">The browser polling <code style="font-size:12px">/state</code> is for showing progress, not for provisioning. Account creation should hang off a webhook or a server-side state check, so a customer closing the tab does not lose a completed verification.</div>
+    </div>
+    <div style="border:1px solid var(--gbg-charcoal-200);border-radius:8px;padding:14px 16px;break-inside:avoid">
+      <div style="font-size:13px;font-weight:700;margin-bottom:4px">Journey versioning</div>
+      <div style="font-size:12.5px;line-height:1.55;color:var(--gbg-charcoal-500)">Pinning <code style="font-size:12px">@latest</code> means a journey edit reaches production without a release — convenient, and a change-control problem in regulated markets. A fixed resource ID per environment, promoted deliberately, is the safer default for banking. Decide per market.</div>
+    </div>
+  </div>
+
+  <h2 style="font-size:22px;margin:36px 0 12px">7. Not yet designed</h2>
+  <p style="margin-bottom:12px">Known gaps in the current screen set, in rough order of how likely a customer is to hit them.</p>
+  <ul style="font-size:13px;line-height:1.7;padding-left:20px;margin-bottom:8px">
+    <li>Session resume — returning to a part-finished journey, on the same device or another</li>
+    <li>Document capture retry, and the copy for a rejected or unreadable image</li>
+    <li>Camera and file permission refusal, and the fallback route when a customer has no camera</li>
+    <li>Timeout on a processing screen that never resolves</li>
+    <li>Accessibility pass — the designs have not been checked against a keyboard-only or screen-reader run</li>
+    <li>Localisation — copy is British English only; Go supports interaction translations, which changes field labels and layout width</li>
+  </ul>
+
+</doc-page>
+</x-dc>
+</body>
+</html>

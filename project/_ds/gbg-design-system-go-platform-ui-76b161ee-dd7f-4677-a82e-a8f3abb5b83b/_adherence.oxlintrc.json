@@ -1,0 +1,312 @@
+{
+  "plugins": [
+    "react",
+    "import"
+  ],
+  "rules": {
+    "react/forbid-elements": [
+      "warn",
+      {
+        "forbid": []
+      }
+    ],
+    "no-restricted-imports": [
+      "warn",
+      {
+        "patterns": [
+          {
+            "group": [
+              "components/core/**",
+              "ui_kits/go-console/**"
+            ],
+            "message": "Import design-system components from 'index.js', not component internals."
+          }
+        ]
+      }
+    ],
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "Literal[value=/#[0-9a-fA-F]{3,8}\\b/]",
+        "message": "Raw hex color — use a design-system color token via var()."
+      },
+      {
+        "selector": "Literal[value=/\\b\\d+px\\b/]",
+        "message": "Raw px value — use a design-system spacing token via var()."
+      },
+      {
+        "selector": "Literal[value=/font-family\\s*:\\s*(?!['\\\"]?(?:DM Sans))/i]",
+        "message": "Font not provided by the design system. Available: DM Sans."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute > JSXIdentifier[name!=/^(?:variant|size|color|startIcon|endIcon|fullWidth|disabled|onClick|type|children|style|key|ref|className|style|children)$/]",
+        "message": "<Button> doesn't accept that prop. Declared props: variant, size, color, startIcon, endIcon, fullWidth, disabled, onClick, type, children, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:contained|outlined|text)$/]",
+        "message": "<Button> variant must be one of 'contained' | 'outlined' | 'text'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='size'] > Literal[value!=/^(?:medium|small)$/]",
+        "message": "<Button> size must be one of 'medium' | 'small'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='color'] > Literal[value!=/^(?:primary|error)$/]",
+        "message": "<Button> color must be one of 'primary' | 'error'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='type'] > Literal[value!=/^(?:button|submit|reset)$/]",
+        "message": "<Button> type must be one of 'button' | 'submit' | 'reset'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Chip'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|onDelete|style|key|ref|className|style|children)$/]",
+        "message": "<Chip> doesn't accept that prop. Declared props: label, onDelete, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:onClick|disabled|ariaLabel|size|children|style|key|ref|className|style|children)$/]",
+        "message": "<IconButton> doesn't accept that prop. Declared props: onClick, disabled, ariaLabel, size, children, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Link'] > JSXAttribute > JSXIdentifier[name!=/^(?:href|onClick|color|children|style|key|ref|className|style|children)$/]",
+        "message": "<Link> doesn't accept that prop. Declared props: href, onClick, color, children, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='StatusBadge'] > JSXAttribute > JSXIdentifier[name!=/^(?:status|label|style|key|ref|className|style|children)$/]",
+        "message": "<StatusBadge> doesn't accept that prop. Declared props: status, label, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='StatusBadge'] > JSXAttribute[name.name='status'] > Literal[value!=/^(?:pass|fail|review|pending)$/]",
+        "message": "<StatusBadge> status must be one of 'pass' | 'fail' | 'review' | 'pending'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='TextField'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|type|value|onChange|placeholder|helperText|error|required|disabled|style|key|ref|className|style|children)$/]",
+        "message": "<TextField> doesn't accept that prop. Declared props: label, type, value, onChange, placeholder, helperText, error, required, disabled, style."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/index.js"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ],
+  "x-omelette": {
+    "components": {
+      "Button": {
+        "replaces": []
+      },
+      "Chip": {
+        "replaces": []
+      },
+      "IconButton": {
+        "replaces": []
+      },
+      "Link": {
+        "replaces": []
+      },
+      "StatusBadge": {
+        "replaces": []
+      },
+      "TextField": {
+        "replaces": []
+      }
+    },
+    "tokens": [
+      "--gbg-charcoal-100",
+      "--gbg-charcoal-200",
+      "--gbg-charcoal-300",
+      "--gbg-charcoal-400",
+      "--gbg-charcoal-50",
+      "--gbg-charcoal-500",
+      "--gbg-charcoal-600",
+      "--gbg-charcoal-700",
+      "--gbg-divider",
+      "--gbg-duration-default",
+      "--gbg-duration-fast",
+      "--gbg-ease",
+      "--gbg-error",
+      "--gbg-font-stack",
+      "--gbg-green-100",
+      "--gbg-green-500",
+      "--gbg-green-700",
+      "--gbg-hyacinth-100",
+      "--gbg-hyacinth-200",
+      "--gbg-hyacinth-300",
+      "--gbg-hyacinth-400",
+      "--gbg-hyacinth-50",
+      "--gbg-hyacinth-500",
+      "--gbg-hyacinth-600",
+      "--gbg-hyacinth-700",
+      "--gbg-info",
+      "--gbg-leading",
+      "--gbg-orange-100",
+      "--gbg-orange-500",
+      "--gbg-orange-700",
+      "--gbg-outcome-blue",
+      "--gbg-outcome-green",
+      "--gbg-outcome-grey",
+      "--gbg-outcome-lightGreen",
+      "--gbg-outcome-orange",
+      "--gbg-outcome-purple",
+      "--gbg-outcome-red",
+      "--gbg-outcome-yellow",
+      "--gbg-peach-100",
+      "--gbg-peach-200",
+      "--gbg-peach-300",
+      "--gbg-peach-400",
+      "--gbg-peach-50",
+      "--gbg-peach-500",
+      "--gbg-peach-600",
+      "--gbg-peach-700",
+      "--gbg-primary",
+      "--gbg-primary-dark",
+      "--gbg-primary-light",
+      "--gbg-radius-lg",
+      "--gbg-radius-md",
+      "--gbg-radius-none",
+      "--gbg-radius-pill",
+      "--gbg-radius-sm",
+      "--gbg-red-100",
+      "--gbg-red-500",
+      "--gbg-red-700",
+      "--gbg-shadow-card",
+      "--gbg-size-body1",
+      "--gbg-size-body2",
+      "--gbg-size-eyebrow",
+      "--gbg-size-h1",
+      "--gbg-size-h2",
+      "--gbg-size-h3",
+      "--gbg-size-h4",
+      "--gbg-size-h5",
+      "--gbg-size-h6",
+      "--gbg-space-0",
+      "--gbg-space-1",
+      "--gbg-space-2",
+      "--gbg-space-3",
+      "--gbg-space-4",
+      "--gbg-space-5",
+      "--gbg-space-6",
+      "--gbg-space-7",
+      "--gbg-space-8",
+      "--gbg-success",
+      "--gbg-surface-page",
+      "--gbg-surface-raised",
+      "--gbg-surface-selected",
+      "--gbg-surface-sidebar",
+      "--gbg-surface-subtle",
+      "--gbg-text-body",
+      "--gbg-text-disabled",
+      "--gbg-text-primary",
+      "--gbg-text-secondary",
+      "--gbg-tracking-eyebrow",
+      "--gbg-warning",
+      "--gbg-weight-bold",
+      "--gbg-weight-extrabold",
+      "--gbg-weight-medium",
+      "--gbg-weight-regular",
+      "--gbg-weight-semibold"
+    ],
+    "tokenKinds": {
+      "--gbg-charcoal-50": "color",
+      "--gbg-charcoal-100": "color",
+      "--gbg-charcoal-200": "color",
+      "--gbg-charcoal-300": "color",
+      "--gbg-charcoal-400": "color",
+      "--gbg-charcoal-500": "color",
+      "--gbg-charcoal-600": "color",
+      "--gbg-charcoal-700": "color",
+      "--gbg-hyacinth-50": "color",
+      "--gbg-hyacinth-100": "color",
+      "--gbg-hyacinth-200": "color",
+      "--gbg-hyacinth-300": "color",
+      "--gbg-hyacinth-400": "color",
+      "--gbg-hyacinth-500": "color",
+      "--gbg-hyacinth-600": "color",
+      "--gbg-hyacinth-700": "color",
+      "--gbg-peach-50": "color",
+      "--gbg-peach-100": "color",
+      "--gbg-peach-200": "color",
+      "--gbg-peach-300": "color",
+      "--gbg-peach-400": "color",
+      "--gbg-peach-500": "color",
+      "--gbg-peach-600": "color",
+      "--gbg-peach-700": "color",
+      "--gbg-red-100": "color",
+      "--gbg-red-500": "color",
+      "--gbg-red-700": "color",
+      "--gbg-green-100": "color",
+      "--gbg-green-500": "color",
+      "--gbg-green-700": "color",
+      "--gbg-orange-100": "color",
+      "--gbg-orange-500": "color",
+      "--gbg-orange-700": "color",
+      "--gbg-outcome-red": "color",
+      "--gbg-outcome-orange": "color",
+      "--gbg-outcome-yellow": "color",
+      "--gbg-outcome-grey": "color",
+      "--gbg-outcome-green": "color",
+      "--gbg-outcome-lightGreen": "color",
+      "--gbg-outcome-blue": "color",
+      "--gbg-outcome-purple": "color",
+      "--gbg-primary-light": "color",
+      "--gbg-primary": "color",
+      "--gbg-primary-dark": "color",
+      "--gbg-error": "color",
+      "--gbg-warning": "color",
+      "--gbg-success": "color",
+      "--gbg-info": "color",
+      "--gbg-text-primary": "font",
+      "--gbg-text-secondary": "font",
+      "--gbg-text-body": "font",
+      "--gbg-text-disabled": "font",
+      "--gbg-divider": "color",
+      "--gbg-surface-page": "color",
+      "--gbg-surface-raised": "color",
+      "--gbg-surface-subtle": "color",
+      "--gbg-surface-sidebar": "color",
+      "--gbg-surface-selected": "color",
+      "--gbg-radius-none": "radius",
+      "--gbg-radius-sm": "radius",
+      "--gbg-radius-md": "radius",
+      "--gbg-radius-lg": "radius",
+      "--gbg-radius-pill": "radius",
+      "--gbg-shadow-card": "shadow",
+      "--gbg-space-0": "spacing",
+      "--gbg-space-1": "spacing",
+      "--gbg-space-2": "spacing",
+      "--gbg-space-3": "spacing",
+      "--gbg-space-4": "spacing",
+      "--gbg-space-5": "spacing",
+      "--gbg-space-6": "spacing",
+      "--gbg-space-7": "spacing",
+      "--gbg-space-8": "spacing",
+      "--gbg-duration-fast": "other",
+      "--gbg-duration-default": "other",
+      "--gbg-ease": "other",
+      "--gbg-font-stack": "font",
+      "--gbg-size-h1": "spacing",
+      "--gbg-size-h2": "spacing",
+      "--gbg-size-h3": "spacing",
+      "--gbg-size-h4": "spacing",
+      "--gbg-size-h5": "spacing",
+      "--gbg-size-h6": "spacing",
+      "--gbg-size-body1": "spacing",
+      "--gbg-size-body2": "spacing",
+      "--gbg-size-eyebrow": "spacing",
+      "--gbg-weight-regular": "font",
+      "--gbg-weight-medium": "font",
+      "--gbg-weight-semibold": "font",
+      "--gbg-weight-bold": "font",
+      "--gbg-weight-extrabold": "font",
+      "--gbg-leading": "font",
+      "--gbg-tracking-eyebrow": "font"
+    },
+    "fontFamilies": [
+      "DM Sans"
+    ]
+  }
+}

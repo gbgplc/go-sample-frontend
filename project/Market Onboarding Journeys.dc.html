@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/gbg-design-system-go-platform-ui-76b161ee-dd7f-4677-a82e-a8f3abb5b83b/colors_and_type.css">
+<script src="_ds/gbg-design-system-go-platform-ui-76b161ee-dd7f-4677-a82e-a8f3abb5b83b/_ds_bundle.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+<style>
+body{margin:0;background:#fff}
+*{box-sizing:border-box}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;font-family:var(--gbg-font-stack)">
+
+  <header style="display:flex;flex-direction:column;gap:0;border-bottom:1px solid var(--gbg-charcoal-200);background:#fff;position:sticky;top:0;z-index:5">
+    <div style="display:flex;align-items:center;gap:24px;padding:0 40px;height:64px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;background:var(--gbg-hyacinth-400)"><i class="ph-bold ph-arrow-up-right" style="font-size:15px;color:#fff"></i></span>
+        <span style="font-size:14px;font-weight:800;color:var(--gbg-charcoal-700)">GBG Go</span>
+        <span style="font-size:14px;color:var(--gbg-charcoal-300)">/</span>
+        <span style="font-size:14px;color:var(--gbg-charcoal-500)">Market onboarding samples</span>
+      </div>
+      <div style="flex:1"></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="display:flex;gap:4px;padding:3px;background:var(--gbg-charcoal-50);border-radius:6px">
+          <sc-for list="{{ presets }}" as="l" hint-placeholder-count="4">
+            <button onClick="{{ l.onPick }}" style="height:28px;padding:0 12px;border:none;border-radius:4px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:background-color 120ms ease;background:{{ l.bg }};color:{{ l.color }};box-shadow:{{ l.shadow }}">{{ l.label }}</button>
+          </sc-for>
+        </div>
+        <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--gbg-charcoal-400)">
+          <i class="ph-bold ph-arrows-horizontal" style="font-size:14px"></i>{{ widthLabel }}
+        </span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:stretch;gap:0;padding:0 40px;height:48px">
+      <sc-for list="{{ markets }}" as="m" hint-placeholder-count="3">
+        <button onClick="{{ m.onPick }}" style="display:flex;align-items:center;gap:10px;padding:0 20px;background:none;border:none;border-bottom:2px solid {{ m.border }};color:{{ m.color }};font-family:inherit;font-size:13px;font-weight:600;white-space:nowrap;flex:none;cursor:pointer;transition:color 120ms ease,border-color 120ms ease">
+          <span style="width:8px;height:8px;border-radius:2px;background:{{ m.accent }}"></span>{{ m.label }}
+        </button>
+      </sc-for>
+      <div style="flex:1"></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="gbg-eyebrow">Scenario</span>
+        <sc-for list="{{ scenarios }}" as="s" hint-placeholder-count="2">
+          <button onClick="{{ s.onPick }}" style="height:auto;padding:4px 10px;border-radius:4px;font-family:inherit;font-size:12px;font-weight:500;line-height:1.4;white-space:nowrap;flex:none;cursor:pointer;transition:background-color 120ms ease,border-color 120ms ease;background:{{ s.bg }};border:1px solid {{ s.border }};color:{{ s.color }}">{{ s.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+  </header>
+
+  <div style="border-bottom:1px solid var(--gbg-charcoal-200);background:var(--gbg-hyacinth-50)">
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 40px;cursor:pointer" onClick="{{ toggleNotes }}">
+      <i class="ph-bold {{ notesIcon }}" style="font-size:14px;color:var(--gbg-hyacinth-400)"></i>
+      <span style="font-size:13px;font-weight:600;color:var(--gbg-charcoal-700)">Assumptions and design reasoning</span>
+      <span style="font-size:12px;color:var(--gbg-charcoal-400)">{{ notesHint }}</span>
+    </div>
+    <sc-if value="{{ notesOpen }}" hint-placeholder-val="{{ true }}">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:40px;padding:0 40px 28px">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="gbg-eyebrow">What I assumed</div>
+          <p style="font-size:13px;line-height:1.6">Three separate consumer-facing sample apps, not the Go console. Each is a fictional customer brand running a Go hosted journey, so the shell is the customer's and the verification steps are ours. Copy follows Go's plain-English, British-spelt register.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="gbg-eyebrow">Why the three markets differ</div>
+          <p style="font-size:13px;line-height:1.6">Banking carries full KYC and AML, so it earns a four-step flow with a referral branch. Healthcare adds proxy registration and explicit record-sharing consent. Gaming is a speed play: silent age and data checks first, documents only as a step-up.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="gbg-eyebrow">Open questions</div>
+          <p style="font-size:13px;line-height:1.6">Are these hosted journeys or SDK builds? Hosted caps a page at five fields, which changes the Details step. Also: which markets and regions per app, and whether the sample brands should be neutral or match named prospects.</p>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) 312px;gap:40px;padding:40px;align-items:start">
+
+    <div style="display:flex;flex-direction:column;gap:20px;align-items:flex-start;min-width:0;overflow-x:auto">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <h3>{{ appName }}</h3>
+        <span style="font-size:13px;color:var(--gbg-charcoal-400)">{{ tagline }}</span>
+      </div>
+
+      <div style="display:flex;align-items:stretch;gap:0;max-width:100%">
+        <div style="width:{{ frameW }}px;height:{{ frameH }}px;border-radius:{{ frameRadius }}px;border:1px solid var(--gbg-charcoal-200);background:#fff;box-shadow:var(--gbg-shadow-card);overflow:hidden;display:flex;flex-direction:column;flex:none">
+
+          <sc-if value="{{ isNarrow }}" hint-placeholder-val="{{ true }}">
+            <div style="height:32px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:11px;font-weight:600;color:var(--gbg-charcoal-400)"><span>9:41</span><span style="display:flex;gap:5px"><i class="ph-bold ph-cell-signal-full"></i><i class="ph-bold ph-battery-high"></i></span></div>
+            <div style="flex:none;display:flex;align-items:center;gap:10px;padding:8px 20px 14px;border-bottom:1px solid var(--gbg-charcoal-100)">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;font-size:13px;font-weight:800;color:#fff;background:{{ accent }}">{{ mark }}</span>
+              <span style="flex:1;font-size:14px;font-weight:700;color:var(--gbg-charcoal-700)">{{ appName }}</span>
+              <i class="ph ph-x" style="font-size:18px;color:var(--gbg-charcoal-400)"></i>
+            </div>
+            <div style="flex:none;padding:16px 20px 0;display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--gbg-charcoal-400)"><span>{{ stageName }}</span></div>
+              <div style="height:4px;border-radius:2px;background:var(--gbg-charcoal-100);overflow:hidden">
+                <div style="height:100%;transition:width 180ms ease;background:{{ accent }};width:{{ progressPct }}"></div>
+              </div>
+            </div>
+            <div style="flex:1;overflow-y:auto;padding:24px 20px 28px">
+              <dc-import name="OnboardingStep" step="{{ step }}" accent="{{ accent }}" accent-soft="{{ accentSoft }}" on-next="{{ next }}" on-back="{{ back }}" on-choose="{{ choose }}" hint-size="100%,420px"></dc-import>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isWide }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:1;display:flex;min-height:0">
+              <aside style="width:{{ railW }}px;flex:none;padding:32px 28px;display:flex;flex-direction:column;gap:32px;background:{{ accentSoft }};border-right:1px solid var(--gbg-charcoal-200)">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;font-size:14px;font-weight:800;color:#fff;background:{{ accent }}">{{ mark }}</span>
+                  <span style="font-size:15px;font-weight:800;color:var(--gbg-charcoal-700)">{{ appName }}</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <sc-for list="{{ stages }}" as="st" hint-placeholder-count="5">
+                    <div style="display:flex;align-items:center;gap:12px;padding:10px 0">
+                      <i class="ph-bold {{ st.icon }}" style="font-size:17px;color:{{ st.color }}"></i>
+                      <span style="font-size:13px;font-weight:{{ st.weight }};color:{{ st.textColor }}">{{ st.label }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="flex:1"></div>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <span style="font-size:12px;font-weight:600;color:var(--gbg-charcoal-500)">Need a hand?</span>
+                  <span style="font-size:12px;line-height:1.5;color:var(--gbg-charcoal-400)">{{ helpLine }}</span>
+                </div>
+              </aside>
+              <main style="padding:{{ mainPad }};flex:1;display:flex;justify-content:center;overflow-y:auto">
+                <div style="width:100%;max-width:440px">
+                  <dc-import name="OnboardingStep" step="{{ step }}" accent="{{ accent }}" accent-soft="{{ accentSoft }}" on-next="{{ next }}" on-back="{{ back }}" on-choose="{{ choose }}" hint-size="100%,420px"></dc-import>
+                </div>
+              </main>
+            </div>
+          </sc-if>
+
+        </div>
+
+        <div onMouseDown="{{ startDrag }}" title="Drag to resize" style="background:{{ handleBg }};width:14px;flex:none;cursor:col-resize;display:flex;align-items:center;justify-content:center;border-radius:0 4px 4px 0;transition:background-color 120ms ease">
+          <span style="width:3px;height:36px;border-radius:2px;background:var(--gbg-charcoal-300)"></span>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="display:inline-flex;align-items:center;gap:6px;height:20px;padding:0 8px;background:#fff;border:1px solid var(--gbg-charcoal-200);border-radius:4px;font-size:12px;font-weight:500;color:var(--gbg-charcoal-500)">{{ chromeLabel }}</span>
+        <span style="font-size:12px;color:var(--gbg-charcoal-400)">{{ breakpointNote }}</span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:12px">
+        <x-import component-from-global-scope="GBGDesignSystemGoPlatformUI_76b161.Button" variant="outlined" size="small" onClick="{{ back }}" hint-size="auto,32px">Back</x-import>
+        <x-import component-from-global-scope="GBGDesignSystemGoPlatformUI_76b161.Button" variant="outlined" size="small" onClick="{{ next }}" hint-size="auto,32px">Next</x-import>
+        <x-import component-from-global-scope="GBGDesignSystemGoPlatformUI_76b161.Button" variant="text" size="small" onClick="{{ restart }}" hint-size="auto,32px">Restart</x-import>
+        <span style="font-size:12px;color:var(--gbg-charcoal-400)">{{ stepCounter }}</span>
+      </div>
+    </div>
+
+    <aside style="border:1px solid var(--gbg-charcoal-200);border-radius:8px;overflow:hidden;position:sticky;top:132px">
+      <div style="padding:16px;border-bottom:1px solid var(--gbg-charcoal-200);display:flex;flex-direction:column;gap:4px">
+        <div class="gbg-eyebrow">Go journey</div>
+        <div style="font-size:14px;font-weight:700;color:var(--gbg-charcoal-700)">{{ journeyName }}</div>
+        <div style="font-size:12px;color:var(--gbg-charcoal-400)">{{ resourceId }}</div>
+      </div>
+      <div style="padding:8px 0">
+        <sc-for list="{{ nodes }}" as="n" hint-placeholder-count="8">
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;background:{{ n.bg }}">
+            <i class="ph-bold {{ n.icon }}" style="font-size:15px;color:{{ n.color }};flex:none"></i>
+            <span style="flex:1;font-size:12px;line-height:1.4;color:{{ n.textColor }}">{{ n.label }}</span>
+            <span style="font-size:11px;color:var(--gbg-charcoal-300)">{{ n.stage }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="padding:14px 16px;border-top:1px solid var(--gbg-charcoal-200);background:var(--gbg-charcoal-50);display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--gbg-charcoal-400)">Interaction groups</span><span style="font-weight:600;color:var(--gbg-charcoal-700)">{{ groupCount }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--gbg-charcoal-400)">Modules in journey</span><span style="font-weight:600;color:var(--gbg-charcoal-700)">{{ moduleCount }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--gbg-charcoal-400)">Processing</span><span style="font-weight:600;color:var(--gbg-charcoal-700)">{{ processingMode }}</span></div>
+      </div>
+    </aside>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1560,&quot;height&quot;:1180}}">
+class Component extends DCLogic {
+  state = { market: 'banking', scenario: 'straight', stepIndex: 0, frameWidth: 390, dragging: false, notesOpen: true };
+
+  BREAKPOINT = 768;
+  MIN_W = 320;
+  MAX_W = 1280;
+
+  componentDidMount() {
+    document.addEventListener('mousemove', this.onMove);
+    document.addEventListener('mouseup', this.onUp);
+  }
+  componentWillUnmount() {
+    document.removeEventListener('mousemove', this.onMove);
+    document.removeEventListener('mouseup', this.onUp);
+  }
+  onDown = e => {
+    this._x = e.clientX;
+    this._w = this.state.frameWidth;
+    this.setState({ dragging: true });
+    e.preventDefault();
+  };
+  onMove = e => {
+    if (!this.state.dragging) return;
+    const w = Math.max(this.MIN_W, Math.min(this.MAX_W, this._w + (e.clientX - this._x)));
+    if (w !== this.state.frameWidth) this.setState({ frameWidth: w });
+  };
+  onUp = () => { if (this.state.dragging) this.setState({ dragging: false }); };
+
+  // ---- content ---------------------------------------------------------
+  get defs() {
+    const bankPrefix = [
+      { kind: 'intro', stage: 'Start', title: 'Open your Northbank current account', body: 'Four steps, about four minutes. You will need photo ID and three years of address history.', note: 'Northbank checks your identity with GBG. Your document images are not kept on this device.', cta: 'Get started', modules: [] },
+      { kind: 'form', stage: 'Details', eyebrow: 'Step 1 of 4', title: 'Your details', body: 'We check these against trusted consumer and government data sources. No credit footprint.', cta: 'Continue', modules: ['Data Verification'],
+        fields: [ { label: 'Full name', placeholder: 'Amara Osei' }, { label: 'Date of birth', placeholder: 'DD / MM / YYYY' }, { label: 'Home address', placeholder: 'Start typing your postcode', helper: 'We will ask for earlier addresses next' }, { label: 'Mobile number', placeholder: '+44' } ] },
+      { kind: 'capture', capture: 'document', stage: 'Document', eyebrow: 'Step 2 of 4', title: 'Scan your photo ID', body: 'Hold the document flat and fill the frame. Where your document has a chip, we read it for a stronger result.', accepted: ['Passport', 'UK driving licence', 'National ID card'], cta: 'Scan document', secondary: 'Use a digital ID instead', modules: ['Document Classification', 'Document Authentication', 'Document Extraction', 'NFC Chip Authentication'] },
+      { kind: 'capture', capture: 'selfie', stage: 'Biometrics', eyebrow: 'Step 3 of 4', title: 'Take a selfie', body: 'We confirm a real person is present, then compare your face with the photo on your document.', cta: 'Take selfie', modules: ['Liveness Verification', 'Facematch Verification'] }
+    ];
+    const bankRuns = a => [
+      { label: 'Data Verification', state: a, ms: '0.9s' }, { label: 'Document Authentication', state: 'Pass', ms: '2.1s' },
+      { label: 'Facematch Verification', state: 'Pass', ms: '1.4s' }, { label: 'PEPs and Sanctions', state: 'Pass', ms: '1.2s' },
+      { label: 'Financial Screening', state: 'Pass', ms: '0.8s' }
+    ];
+    return {
+      banking: {
+        label: 'Banking and finance', app: 'Northbank', mark: 'N', tagline: 'Current account opening, UK',
+        accent: '#4D4DFF', accentSoft: 'var(--gbg-hyacinth-50)',
+        journey: 'UK retail account opening', resourceId: 'jny_uk_retail_cdd@latest', processing: 'Linear',
+        help: 'Call 0800 000 000, or carry on in a branch with the same reference.',
+        scenarios: {
+          straight: { label: 'Straight-through', steps: [ ...bankPrefix,
+            { kind: 'processing', stage: 'Screening', eyebrow: 'Step 4 of 4', title: 'Running your checks', body: 'This usually takes a few seconds.', cta: 'See result', modules: ['PEPs and Sanctions', 'Financial Screening', 'GBG Trust'],
+              moduleRuns: [ { label: 'Data Verification', state: 'Pass' }, { label: 'Document Authentication', state: 'Pass' }, { label: 'PEPs and Sanctions', state: 'Running' }, { label: 'Financial Screening', state: 'Running' } ] },
+            { kind: 'result', state: 'pass', stage: 'Decision', title: 'Account opened', decision: 'Approved', timing: 'Decision reached in 6 seconds', body: 'Your account number and sort code are in the Northbank app. Your card arrives within five working days.', moduleRuns: bankRuns('Pass'), cta: 'Go to my account', modules: [],
+              recordNote: 'Download your verification record as a PDF, or ask us for it later. We keep it for six years under our AML duties.',
+              summary: [ { k: 'Journey', v: 'UK retail account opening · v12' }, { k: 'Reference', v: 'NB-2026-004182' }, { k: 'Started', v: '26 Aug 2026 09:41:02' }, { k: 'Decision reached', v: '26 Aug 2026 09:41:08' }, { k: 'Total time', v: '6.4 seconds' }, { k: 'Modules run', v: '10 of 10' }, { k: 'Document', v: 'UK passport · chip read' }, { k: 'Data sources matched', v: '3 of 3' }, { k: 'Outcome', v: 'Approved — no manual review' } ] } ] },
+          refer: { label: 'Referred — address mismatch', steps: [ ...bankPrefix,
+            { kind: 'processing', stage: 'Screening', eyebrow: 'Step 4 of 4', title: 'Running your checks', body: 'This usually takes a few seconds.', cta: 'See result', modules: ['PEPs and Sanctions', 'Financial Screening', 'GBG Trust'],
+              moduleRuns: [ { label: 'Data Verification', state: 'Review' }, { label: 'Document Authentication', state: 'Pass' }, { label: 'PEPs and Sanctions', state: 'Pass' }, { label: 'Financial Screening', state: 'Running' } ] },
+            { kind: 'result', state: 'refer', stage: 'Decision', title: 'We need one more document', decision: 'Referred', timing: 'Referred after 6 seconds', body: 'Your address did not match our data sources. Add a bank statement or utility bill dated in the last three months.', moduleRuns: bankRuns('Review'), cta: 'Add a document', modules: [] },
+            { kind: 'upload', stage: 'Proof of address', title: 'Proof of address', body: 'We read the name and address from your document and compare them with what you told us.', accepted: ['Bank statement — last 3 months', 'Utility bill', 'Council tax letter'], cta: 'Submit', modules: ['Proof of Address Extraction', 'Document Attachments'] },
+            { kind: 'result', state: 'refer', stage: 'Decision', title: 'With our team', decision: 'In review', timing: 'Most reviews close within two hours', body: 'An analyst is checking your document. We will email a.osei@example.com as soon as it is done.', moduleRuns: [ { label: 'Proof of Address Extraction', state: 'Pass', ms: '1.6s' }, { label: 'Manual review', state: 'Running' } ], cta: 'Done', modules: [],
+              recordNote: 'You can add another document while the review is open. We will email you either way.',
+              summary: [ { k: 'Journey', v: 'UK retail account opening · v12' }, { k: 'Reference', v: 'NB-2026-004219' }, { k: 'Started', v: '26 Aug 2026 14:02:11' }, { k: 'Referred', v: '26 Aug 2026 14:02:17' }, { k: 'Time to referral', v: '6.1 seconds' }, { k: 'Modules run', v: '11 of 12' }, { k: 'Referred by', v: 'Data Verification — address not matched' }, { k: 'Evidence added', v: '1 document · proof of address' }, { k: 'With', v: 'Northbank onboarding team' } ] } ] }
+        }
+      },
+      health: {
+        label: 'Healthcare', app: 'Meridian Health', mark: 'M', tagline: 'Patient record registration',
+        accent: '#219C4C', accentSoft: 'var(--gbg-green-100)',
+        journey: 'Patient record access', resourceId: 'jny_patient_record_v3@latest', processing: 'Adaptive',
+        help: 'Reception can verify you in person with the same documents.',
+        scenarios: {
+          self: { label: 'Patient — verified in app', steps: [
+            { kind: 'intro', stage: 'Start', title: 'Verify your identity to see your health record', body: 'Meridian confirms who you are before showing your record. About three minutes.', note: 'You can also bring ID to reception and verify in person.', cta: 'Start', modules: [] },
+            { kind: 'choice', stage: 'Who', title: 'Who are you registering?', body: 'Both routes ask for the same identity checks. Acting for someone else adds one document.', modules: [],
+              options: [ { label: 'Myself', detail: 'You are the patient', icon: 'ph-user' }, { label: 'Someone I care for', detail: 'You hold parental responsibility or a lasting power of attorney', icon: 'ph-users-three' } ], branchTo: ['self', 'carer'] },
+            { kind: 'form', stage: 'Details', title: 'Your details', body: 'We match these against national records to find your patient file.', cta: 'Continue', modules: ['Data Verification'],
+              fields: [ { label: 'Full name', placeholder: 'Priya Raman' }, { label: 'Date of birth', placeholder: 'DD / MM / YYYY' }, { label: 'Postcode', placeholder: 'SE1 7TP' }, { label: 'NHS number', placeholder: '000 000 0000', helper: 'Optional. Ten digits, on your medical card.' } ] },
+            { kind: 'choice', stage: 'Route', title: 'How would you like to verify?', body: 'A digital ID you already hold is quickest. Scanning a document works if you have none.', modules: ['Digital Identity Insights'],
+              options: [ { label: 'Use a digital ID', detail: 'Post Office EasyID, Yoti, or a bank ID you already hold', icon: 'ph-identification-badge' }, { label: 'Scan a photo ID', detail: 'Passport, driving licence or biometric residence permit', icon: 'ph-scan' } ] },
+            { kind: 'capture', capture: 'document', stage: 'Document', title: 'Scan your photo ID', body: 'We check the document is genuine and read the details from it.', accepted: ['Passport', 'Driving licence', 'Biometric residence permit'], cta: 'Scan document', modules: ['Document Authentication', 'Document Extraction'] },
+            { kind: 'capture', capture: 'selfie', stage: 'Biometrics', title: 'Take a selfie', body: 'This proves you are the person in the document, so nobody else can open your record.', cta: 'Take selfie', modules: ['Liveness Verification', 'Facematch Verification'] },
+            { kind: 'consent', stage: 'Consent', title: 'Share your record with Meridian Health', body: 'You decide what each group can see. You can change any of this later in settings.', cta: 'Agree and continue', modules: [],
+              checks: [ { label: 'Show my record to clinicians treating me', detail: 'GP notes, test results, prescriptions and referrals', checked: true }, { label: 'Share prescriptions with my chosen pharmacy', detail: 'Only the pharmacy you name' }, { label: 'Use my data for research', detail: 'Anonymised, optional, and unrelated to your care' } ] },
+            { kind: 'result', state: 'pass', stage: 'Decision', title: 'Record linked', decision: 'Verified', timing: 'Verified in 9 seconds', body: 'You can now see appointments, test results and prescriptions in your Meridian account.', cta: 'Open my record', modules: [],
+              moduleRuns: [ { label: 'Data Verification', state: 'Pass', ms: '1.1s' }, { label: 'Document Authentication', state: 'Pass', ms: '2.4s' }, { label: 'Facematch Verification', state: 'Pass', ms: '1.3s' }, { label: 'Liveness Verification', state: 'Pass', ms: '2.9s' } ],
+              recordNote: 'Your identity evidence is held separately from your medical record. Ask the practice for a copy, or to delete it once registration is complete.',
+              summary: [ { k: 'Journey', v: 'Patient record access · v3' }, { k: 'Reference', v: 'MH-VER-77341' }, { k: 'Verified', v: '26 Aug 2026 08:17:44' }, { k: 'Total time', v: '9.2 seconds' }, { k: 'Modules run', v: '6 of 6' }, { k: 'Identity route', v: 'Photo ID and selfie' }, { k: 'Record matched', v: '1 patient file' }, { k: 'Consent given', v: 'Clinicians and named pharmacy' }, { k: 'Assurance level', v: 'Medium — meets practice policy' } ] } ] },
+          carer: { label: 'Carer acting for a patient', steps: [
+            { kind: 'intro', stage: 'Start', title: 'Verify your identity to see your health record', body: 'Meridian confirms who you are before showing your record. About three minutes.', note: 'You can also bring ID to reception and verify in person.', cta: 'Start', modules: [] },
+            { kind: 'choice', stage: 'Who', title: 'Who are you registering?', body: 'Both routes ask for the same identity checks. Acting for someone else adds one document.', modules: [],
+              options: [ { label: 'Myself', detail: 'You are the patient', icon: 'ph-user' }, { label: 'Someone I care for', detail: 'You hold parental responsibility or a lasting power of attorney', icon: 'ph-users-three' } ], branchTo: ['self', 'carer'] },
+            { kind: 'form', stage: 'Patient', title: 'Who are you acting for?', body: 'We find their record first, then verify you.', cta: 'Continue', modules: ['Data Verification'],
+              fields: [ { label: "Patient's full name", placeholder: 'Margaret Ellis' }, { label: "Patient's date of birth", placeholder: 'DD / MM / YYYY' }, { label: "Patient's postcode", placeholder: 'SE1 7TP' }, { label: 'Your relationship to them', placeholder: 'Attorney, parent, guardian' } ] },
+            { kind: 'form', stage: 'Details', title: 'Your details', body: 'Now the identity checks for you, the carer.', cta: 'Continue', modules: ['Data Verification'],
+              fields: [ { label: 'Full name', placeholder: 'Daniel Ellis' }, { label: 'Date of birth', placeholder: 'DD / MM / YYYY' }, { label: 'Home address', placeholder: 'Start typing your postcode' }, { label: 'Mobile number', placeholder: '+44' } ] },
+            { kind: 'capture', capture: 'document', stage: 'Document', title: 'Scan your photo ID', body: 'We check the document is genuine and read the details from it.', accepted: ['Passport', 'Driving licence', 'Biometric residence permit'], cta: 'Scan document', modules: ['Document Authentication', 'Document Extraction'] },
+            { kind: 'capture', capture: 'selfie', stage: 'Biometrics', title: 'Take a selfie', body: 'This proves you are the person in the document.', cta: 'Take selfie', modules: ['Liveness Verification', 'Facematch Verification'] },
+            { kind: 'upload', stage: 'Authority', title: 'Proof you can act for Margaret Ellis', body: 'A clinician reviews this before the record is shared. It is the one step we cannot automate.', accepted: ['Lasting power of attorney', 'Court order', 'Clinic authorisation letter'], cta: 'Submit', modules: ['Document Attachments'] },
+            { kind: 'result', state: 'refer', stage: 'Decision', title: 'With the practice team', decision: 'In review', timing: 'Usually within one working day', body: 'Your identity is verified. A clinician is checking your authority to act for Margaret, and we will email you when it is approved.', cta: 'Done', modules: [],
+              moduleRuns: [ { label: 'Data Verification', state: 'Pass', ms: '1.0s' }, { label: 'Facematch Verification', state: 'Pass', ms: '1.3s' }, { label: 'Document Attachments', state: 'Review' } ],
+              recordNote: 'Nothing from Margaret’s record is shared until a clinician approves your authority.',
+              summary: [ { k: 'Journey', v: 'Patient record access · v3' }, { k: 'Reference', v: 'MH-VER-77358' }, { k: 'Acting for', v: 'Margaret Ellis · b. 1948' }, { k: 'Your identity', v: 'Verified in 8.6 seconds' }, { k: 'Modules run', v: '6 of 6' }, { k: 'Authority document', v: 'Lasting power of attorney' }, { k: 'Awaiting', v: 'Clinician review of authority' }, { k: 'Outcome so far', v: 'Identity verified, access pending' } ] } ] }
+        }
+      },
+      gaming: {
+        label: 'Online gaming', app: 'Ridgeline Play', mark: 'R', tagline: 'Account sign-up and age gate',
+        accent: '#CC6133', accentSoft: 'var(--gbg-peach-100)',
+        journey: 'GB player onboarding', resourceId: 'jny_gb_player_kyc@latest', processing: 'Adaptive',
+        help: 'Live chat is open 24 hours. Safer gambling tools are in Account.',
+        scenarios: {
+          instant: { label: 'Instant pass', steps: [
+            { kind: 'form', stage: 'Sign up', title: 'Create your account', body: 'You must be 18 or over to open an account.', cta: 'Create account', note: 'We check your age and identity from data in the background. Most players never scan a document.', modules: ['Age Verification', 'Data Verification', 'IP Geolocation', 'GBG Trust'],
+              fields: [ { label: 'Email', placeholder: 'you@example.com' }, { label: 'Mobile number', placeholder: '+44' }, { label: 'Date of birth', placeholder: 'DD / MM / YYYY' }, { label: 'Postcode', placeholder: 'M1 4BT' } ] },
+            { kind: 'processing', stage: 'Checks', title: 'Checking your details', body: '', cta: 'Continue', modules: [],
+              moduleRuns: [ { label: 'Age Verification', state: 'Pass' }, { label: 'Data Verification', state: 'Pass' }, { label: 'IP Geolocation', state: 'Pass' }, { label: 'GBG Trust', state: 'Running' } ] },
+            { kind: 'choice', stage: 'Limits', title: 'Set your deposit limit', body: 'Pick a weekly cap before you play. Lowering it takes effect at once; raising it takes 24 hours.', modules: [],
+              options: [ { label: '£50 a week', detail: 'Our most common choice', icon: 'ph-shield-check' }, { label: '£250 a week', detail: 'Change it any time in Account', icon: 'ph-sliders-horizontal' }, { label: 'No limit for now', detail: 'We still monitor play and will check in with you', icon: 'ph-warning' } ] },
+            { kind: 'result', state: 'pass', stage: 'Decision', title: 'You are in', decision: 'Verified', timing: 'Verified in 1.8 seconds', body: 'No documents needed. Your deposit limit is set and you can play now.', cta: 'Start playing', modules: [],
+              moduleRuns: [ { label: 'Age Verification', state: 'Pass', ms: '0.3s' }, { label: 'Data Verification', state: 'Pass', ms: '0.7s' }, { label: 'IP Geolocation', state: 'Pass', ms: '0.2s' }, { label: 'GBG Trust', state: 'Pass', ms: '0.6s' }, { label: 'Document Authentication', state: 'Skipped' } ],
+              recordNote: 'Your checks are logged for our licence conditions. Safer gambling tools and your limit history are in Account.',
+              summary: [ { k: 'Journey', v: 'GB player onboarding · v8' }, { k: 'Player reference', v: 'RP-4471902' }, { k: 'Verified', v: '26 Aug 2026 21:12:01' }, { k: 'Total time', v: '1.8 seconds' }, { k: 'Modules run', v: '4 of 4' }, { k: 'Age check', v: '18+ confirmed from data' }, { k: 'Documents needed', v: 'None' }, { k: 'Jurisdiction', v: 'Great Britain — licensed' }, { k: 'Deposit limit', v: '£250 a week' } ] } ] },
+          stepup: { label: 'Step-up to document', steps: [
+            { kind: 'form', stage: 'Sign up', title: 'Create your account', body: 'You must be 18 or over to open an account.', cta: 'Create account', note: 'We check your age and identity from data in the background. Most players never scan a document.', modules: ['Age Verification', 'Data Verification', 'IP Geolocation', 'GBG Trust'],
+              fields: [ { label: 'Email', placeholder: 'you@example.com' }, { label: 'Mobile number', placeholder: '+44' }, { label: 'Date of birth', placeholder: 'DD / MM / YYYY' }, { label: 'Postcode', placeholder: 'M1 4BT' } ] },
+            { kind: 'processing', stage: 'Checks', title: 'Checking your details', body: '', cta: 'Continue', modules: [],
+              moduleRuns: [ { label: 'Age Verification', state: 'Pass' }, { label: 'Data Verification', state: 'Review' }, { label: 'IP Geolocation', state: 'Pass' }, { label: 'GBG Trust', state: 'Pass' } ] },
+            { kind: 'intro', stage: 'Step-up', title: 'One quick check', body: 'We could not confirm your age from data alone, so we need to see a document. About forty seconds.', note: 'This happens to roughly one player in eight, usually because they have recently moved.', cta: 'Scan my ID', modules: [] },
+            { kind: 'capture', capture: 'document', stage: 'Document', title: 'Scan your photo ID', body: 'Passport or driving licence. Fill the frame and hold steady.', accepted: ['Passport', 'Driving licence'], cta: 'Scan document', modules: ['Document Classification', 'Document Authentication', 'Document Extraction'] },
+            { kind: 'capture', capture: 'selfie', stage: 'Biometrics', title: 'Take a selfie', body: 'Last step. We check you match your document.', cta: 'Take selfie', modules: ['Liveness Verification', 'Facematch Verification'] },
+            { kind: 'result', state: 'pass', stage: 'Decision', title: 'You are in', decision: 'Verified', timing: 'Verified in 54 seconds', body: 'Set a deposit limit before your first game. You can change it any time in Account.', cta: 'Set a deposit limit', modules: [],
+              moduleRuns: [ { label: 'Age Verification', state: 'Pass', ms: '0.3s' }, { label: 'Data Verification', state: 'Review', ms: '0.8s' }, { label: 'Document Authentication', state: 'Pass', ms: '2.2s' }, { label: 'Facematch Verification', state: 'Pass', ms: '1.4s' } ],
+              recordNote: 'You will not be asked for a document again unless your details change.',
+              summary: [ { k: 'Journey', v: 'GB player onboarding · v8' }, { k: 'Player reference', v: 'RP-4471938' }, { k: 'Verified', v: '26 Aug 2026 21:44:30' }, { k: 'Total time', v: '54 seconds' }, { k: 'Modules run', v: '9 of 9' }, { k: 'Why we stepped up', v: 'Address on file under 6 months old' }, { k: 'Document', v: 'UK driving licence' }, { k: 'Jurisdiction', v: 'Great Britain — licensed' }, { k: 'Outcome', v: 'Verified — no further checks' } ] } ] },
+          blocked: { label: 'Blocked — jurisdiction', steps: [
+            { kind: 'form', stage: 'Sign up', title: 'Create your account', body: 'You must be 18 or over to open an account.', cta: 'Create account', note: 'We check your age and identity from data in the background. Most players never scan a document.', modules: ['Age Verification', 'Data Verification', 'IP Geolocation', 'GBG Trust'],
+              fields: [ { label: 'Email', placeholder: 'you@example.com' }, { label: 'Mobile number', placeholder: '+44' }, { label: 'Date of birth', placeholder: 'DD / MM / YYYY' }, { label: 'Postcode', placeholder: 'M1 4BT' } ] },
+            { kind: 'processing', stage: 'Checks', title: 'Checking your details', body: '', cta: 'Continue', modules: [],
+              moduleRuns: [ { label: 'Age Verification', state: 'Pass' }, { label: 'IP Geolocation', state: 'Fail' }, { label: 'Data Verification', state: 'Skipped' }, { label: 'GBG Trust', state: 'Skipped' } ] },
+            { kind: 'result', state: 'fail', stage: 'Decision', title: 'We cannot open an account', decision: 'Declined', timing: 'Declined in 1.2 seconds', body: 'Ridgeline Play is licensed in Great Britain only, and your connection appears to be outside that area. If you are travelling, try again when you are back.', cta: 'Read our licence terms', modules: [],
+              moduleRuns: [ { label: 'IP Geolocation', state: 'Fail', ms: '0.2s' }, { label: 'Age Verification', state: 'Pass', ms: '0.3s' }, { label: 'Data Verification', state: 'Skipped' } ],
+              recordNote: 'No account was created and no identity documents were collected. Ask us to delete the attempt log at any time.',
+              summary: [ { k: 'Journey', v: 'GB player onboarding · v8' }, { k: 'Attempt reference', v: 'RP-4471955' }, { k: 'Declined', v: '26 Aug 2026 22:03:09' }, { k: 'Total time', v: '1.2 seconds' }, { k: 'Modules run', v: '2 of 4' }, { k: 'Declined by', v: 'IP Geolocation — outside licensed area' }, { k: 'Age check', v: '18+ confirmed' }, { k: 'Data retained', v: 'Email and attempt log only' } ] } ] }
+        }
+      }
+    };
+  }
+
+  // ---- helpers ---------------------------------------------------------
+  pickMarket(id) {
+    const m = this.defs[id];
+    this.setState({ market: id, scenario: Object.keys(m.scenarios)[0], stepIndex: 0 });
+  }
+
+  renderVals() {
+    const defs = this.defs;
+    const mk = defs[this.state.market];
+    const sc = mk.scenarios[this.state.scenario] || mk.scenarios[Object.keys(mk.scenarios)[0]];
+    const steps = sc.steps;
+    const i = Math.min(this.state.stepIndex, steps.length - 1);
+    const step = steps[i];
+    const accent = mk.accent;
+
+
+
+    // stage rail
+    const seen = [];
+    steps.forEach((s, idx) => { if (!seen.some(x => x.label === s.stage)) seen.push({ label: s.stage, first: idx }); });
+    const currentStage = step.stage;
+    const stages = seen.map(s => {
+      const done = s.first < i && s.label !== currentStage;
+      const active = s.label === currentStage;
+      return {
+        label: s.label,
+        icon: done ? 'ph-check-circle' : active ? 'ph-circle-half' : 'ph-circle',
+        color: done ? 'var(--gbg-green-700)' : active ? accent : 'var(--gbg-charcoal-300)',
+        weight: active ? 700 : 500,
+        textColor: active ? 'var(--gbg-charcoal-700)' : done ? 'var(--gbg-charcoal-500)' : 'var(--gbg-charcoal-400)'
+      };
+    });
+
+    // module chain
+    const nodes = [];
+    steps.forEach((s, idx) => (s.modules || []).forEach(label => {
+      const done = idx < i, active = idx === i;
+      nodes.push({
+        label, stage: s.stage,
+        icon: done ? 'ph-check-circle' : active ? 'ph-play-circle' : 'ph-circle-dashed',
+        color: done ? 'var(--gbg-green-700)' : active ? accent : 'var(--gbg-charcoal-300)',
+        textColor: active ? 'var(--gbg-charcoal-700)' : 'var(--gbg-charcoal-500)',
+        bg: active ? 'var(--gbg-charcoal-50)' : 'transparent'
+      });
+    }));
+
+    const w = this.state.frameWidth;
+    const narrow = w < this.BREAKPOINT;
+    const railW = w < 1000 ? 260 : 312;
+
+    return {
+      markets: Object.keys(defs).map(id => {
+        const active = id === this.state.market;
+        return {
+          label: defs[id].label, accent: defs[id].accent,
+          onPick: () => this.pickMarket(id),
+          border: active ? defs[id].accent : 'transparent',
+          color: active ? 'var(--gbg-charcoal-700)' : 'var(--gbg-charcoal-400)'
+        };
+      }),
+      scenarios: Object.keys(mk.scenarios).map(id => {
+        const active = id === this.state.scenario;
+        return {
+          label: mk.scenarios[id].label,
+          onPick: () => this.setState({ scenario: id, stepIndex: 0 }),
+          bg: active ? 'var(--gbg-hyacinth-100)' : '#fff',
+          border: active ? 'var(--gbg-hyacinth-400)' : 'var(--gbg-charcoal-200)',
+          color: active ? 'var(--gbg-hyacinth-400)' : 'var(--gbg-charcoal-500)'
+        };
+      }),
+      presets: [390, 768, 1024, 1280].map(px => ({
+        label: px + 'px',
+        onPick: () => this.setState({ frameWidth: px }),
+        bg: px === w ? '#fff' : 'transparent',
+        color: px === w ? 'var(--gbg-hyacinth-400)' : 'var(--gbg-charcoal-400)',
+        shadow: px === w ? '0 1px 2px rgba(0,0,0,.08)' : 'none'
+      })),
+      widthLabel: w + ' px — drag the handle',
+      isNarrow: narrow,
+      isWide: !narrow,
+      chromeLabel: narrow ? 'Mobile chrome' : 'Web chrome',
+      breakpointNote: narrow
+        ? 'Under 768px: app bar, progress bar, single column. Drag right to cross the breakpoint.'
+        : 'From 768px: stage rail on the left, content column capped at 440px.',
+      frameW: w,
+      frameH: narrow ? 812 : 680,
+      frameRadius: narrow ? 32 : 12,
+      railW,
+      mainPad: w < 1000 ? '40px' : '56px 64px',
+      handleBg: this.state.dragging ? 'var(--gbg-hyacinth-100)' : 'transparent',
+      startDrag: this.onDown,
+
+      appName: mk.app, mark: mk.mark, tagline: mk.tagline, accent, accentSoft: mk.accentSoft,
+      helpLine: mk.help, journeyName: mk.journey, resourceId: mk.resourceId, processingMode: mk.processing,
+      step, stages, nodes,
+      stageName: step.stage,
+      stepCounter: 'Step ' + (i + 1) + ' of ' + steps.length,
+      progressPct: Math.round(((i + 1) / steps.length) * 100) + '%',
+      groupCount: seen.length,
+      moduleCount: new Set(steps.flatMap(s => s.modules || [])).size,
+
+      next: () => this.setState({ stepIndex: i < steps.length - 1 ? i + 1 : 0 }),
+      back: () => this.setState({ stepIndex: Math.max(0, i - 1) }),
+      restart: () => this.setState({ stepIndex: 0 }),
+      choose: (o, oi) => {
+        if (step.branchTo && step.branchTo[oi] && step.branchTo[oi] !== this.state.scenario) {
+          this.setState({ scenario: step.branchTo[oi], stepIndex: i + 1 });
+        } else {
+          this.setState({ stepIndex: i < steps.length - 1 ? i + 1 : 0 });
+        }
+      },
+      notesOpen: this.state.notesOpen,
+      notesIcon: this.state.notesOpen ? 'ph-caret-down' : 'ph-caret-right',
+      notesHint: this.state.notesOpen ? '' : 'Three assumptions, why the markets differ, open questions',
+      toggleNotes: () => this.setState({ notesOpen: !this.state.notesOpen })
+    };
+  }
+}
+</script>
+</body>
+</html>
