@@ -115,7 +115,9 @@ const straightThrough: MockStepDef[] = [
   },
 ];
 
-const referral: MockStepDef[] = [
+// Shared up to and including the proof-of-address upload — 'refer' and
+// 'denied' only differ in how the manual review resolves.
+const referPrefix: MockStepDef[] = [
   ...prefix,
   {
     kind: 'processing',
@@ -150,6 +152,10 @@ const referral: MockStepDef[] = [
     cta: 'Submit',
     modules: ['Proof of Address Extraction', 'Document Attachments'],
   },
+];
+
+const referral: MockStepDef[] = [
+  ...referPrefix,
   {
     kind: 'result',
     stage: 'Decision',
@@ -177,10 +183,44 @@ const referral: MockStepDef[] = [
   },
 ];
 
+// Terminal state once a reviewer denies the referral (Manual Review module,
+// the Deny outcome) — distinct from the automated 'refer' decision above,
+// which just means the review is still open.
+const denied: MockStepDef[] = [
+  ...referPrefix,
+  {
+    kind: 'result',
+    stage: 'Decision',
+    title: 'We could not open your account',
+    decision: 'fail',
+    timing: 'Decision reached after review',
+    body: 'After reviewing your documents, we are unable to open a Northbank account for you at this time. This does not affect your credit score. If you think this is a mistake, call us on 0800 000 000.',
+    moduleRuns: [
+      { label: 'Proof of Address Extraction', state: 'Pass', ms: '1.6s' },
+      { label: 'Manual review', state: 'Fail' },
+    ],
+    cta: 'Contact us',
+    recordNote: 'You can ask for a copy of this decision, or find out how to appeal it. We keep a record of this application for our regulatory duties.',
+    summary: [
+      { k: 'Journey', v: 'UK retail account opening · v12' },
+      { k: 'Reference', v: 'NB-2026-004233' },
+      { k: 'Started', v: '27 Aug 2026 10:15:40' },
+      { k: 'Referred', v: '27 Aug 2026 10:15:46' },
+      { k: 'Reviewed', v: '27 Aug 2026 15:02:11' },
+      { k: 'Modules run', v: '12 of 12' },
+      { k: 'Declined by', v: 'Manual review — proof of address not accepted' },
+      { k: 'Evidence added', v: '1 document · proof of address' },
+      { k: 'With', v: 'Northbank onboarding team' },
+      { k: 'Outcome', v: 'Declined after manual review' },
+    ],
+  },
+];
+
 export const fixtures: MockMarketFixtures = {
   defaultScenarioId: 'straight',
   scenarios: {
     straight: { id: 'straight', label: 'Straight-through', steps: straightThrough },
     refer: { id: 'refer', label: 'Referred — address mismatch', steps: referral },
+    denied: { id: 'denied', label: 'Referred — denied on review', steps: denied },
   },
 };

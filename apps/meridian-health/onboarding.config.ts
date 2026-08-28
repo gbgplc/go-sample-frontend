@@ -11,37 +11,43 @@ export const config: AppConfig = {
   resourceId: 'jny_patient_record_v3@latest',
 };
 
-// Shared prefix — identical for both the "myself" and "carer" scenarios;
-// the choice on the second step is what branches them apart.
-const prefix: MockStepDef[] = [
-  {
-    kind: 'intro',
-    stage: 'Start',
-    title: 'Verify your identity to see your health record',
-    body: 'Meridian confirms who you are before showing your record. About three minutes.',
-    note: 'You can also bring ID to reception and verify in person.',
-    cta: 'Start',
-  },
-  {
-    kind: 'choice',
-    stage: 'Who',
-    title: 'Who are you registering?',
-    body: 'Both routes ask for the same identity checks. Acting for someone else adds one document.',
-    options: [
-      { value: 'self', label: 'Myself', detail: 'You are the patient', icon: 'ph-user', branchTo: 'self' },
-      {
-        value: 'carer',
-        label: 'Someone I care for',
-        detail: 'You hold parental responsibility or a lasting power of attorney',
-        icon: 'ph-users-three',
-        branchTo: 'carer',
-      },
-    ],
-  },
-];
+// Shared prefix — identical content for every scenario; only the "Someone I
+// care for" branch target changes, so a scenario reached directly via
+// ?mock_scenario= (rather than by picking through the choice) doesn't get
+// bounced back to a sibling scenario if the choice screen is re-answered.
+// See MockTransport's branching rule: it only switches scenario when the
+// option's branchTo differs from the session's current one.
+function prefixFor(carerBranch: 'carer' | 'carer-denied'): MockStepDef[] {
+  return [
+    {
+      kind: 'intro',
+      stage: 'Start',
+      title: 'Verify your identity to see your health record',
+      body: 'Meridian confirms who you are before showing your record. About three minutes.',
+      note: 'You can also bring ID to reception and verify in person.',
+      cta: 'Start',
+    },
+    {
+      kind: 'choice',
+      stage: 'Who',
+      title: 'Who are you registering?',
+      body: 'Both routes ask for the same identity checks. Acting for someone else adds one document.',
+      options: [
+        { value: 'self', label: 'Myself', detail: 'You are the patient', icon: 'ph-user', branchTo: 'self' },
+        {
+          value: 'carer',
+          label: 'Someone I care for',
+          detail: 'You hold parental responsibility or a lasting power of attorney',
+          icon: 'ph-users-three',
+          branchTo: carerBranch,
+        },
+      ],
+    },
+  ];
+}
 
 const selfSteps: MockStepDef[] = [
-  ...prefix,
+  ...prefixFor('carer'),
   {
     kind: 'form',
     stage: 'Details',
@@ -152,8 +158,12 @@ const selfSteps: MockStepDef[] = [
   },
 ];
 
-const carerSteps: MockStepDef[] = [
-  ...prefix,
+// Shared up to and including the authority-document upload — 'carer' and
+// 'carer-denied' only differ in how the clinician's review resolves. Takes
+// the same carerBranch parameter as prefixFor, for the same reason.
+function carerPrefixFor(carerBranch: 'carer' | 'carer-denied'): MockStepDef[] {
+  return [
+  ...prefixFor(carerBranch),
   {
     kind: 'form',
     stage: 'Patient',
@@ -210,6 +220,11 @@ const carerSteps: MockStepDef[] = [
     cta: 'Submit',
     modules: ['Document Attachments'],
   },
+  ];
+}
+
+const carerSteps: MockStepDef[] = [
+  ...carerPrefixFor('carer'),
   {
     kind: 'result',
     stage: 'Decision',
@@ -237,10 +252,43 @@ const carerSteps: MockStepDef[] = [
   },
 ];
 
+// Terminal state once a clinician denies the authority-to-act review
+// (Manual Review module, the Deny outcome) — distinct from 'carer' above,
+// which just means the review is still open.
+const carerDenied: MockStepDef[] = [
+  ...carerPrefixFor('carer-denied'),
+  {
+    kind: 'result',
+    stage: 'Decision',
+    title: 'We could not verify your authority',
+    decision: 'fail',
+    timing: 'Decision reached after review',
+    body: "A clinician reviewed the document you provided and could not confirm you're authorised to act for Margaret Ellis. Nothing from her record has been shared. Contact the practice with updated documentation if you believe this is wrong.",
+    cta: 'Contact the practice',
+    moduleRuns: [
+      { label: 'Data Verification', state: 'Pass', ms: '1.0s' },
+      { label: 'Facematch Verification', state: 'Pass', ms: '1.3s' },
+      { label: 'Document Attachments', state: 'Fail' },
+    ],
+    recordNote: 'Your own identity remains verified. You can submit a new authority document at any time.',
+    summary: [
+      { k: 'Journey', v: 'Patient record access · v3' },
+      { k: 'Reference', v: 'MH-VER-77372' },
+      { k: 'Acting for', v: 'Margaret Ellis · b. 1948' },
+      { k: 'Your identity', v: 'Verified in 8.4 seconds' },
+      { k: 'Modules run', v: '6 of 6' },
+      { k: 'Authority document', v: 'Lasting power of attorney — not accepted' },
+      { k: 'Reviewed by', v: 'Clinician' },
+      { k: 'Outcome', v: 'Access denied — authority not confirmed' },
+    ],
+  },
+];
+
 export const fixtures: MockMarketFixtures = {
   defaultScenarioId: 'self',
   scenarios: {
     self: { id: 'self', label: 'Patient — verified in app', steps: selfSteps },
     carer: { id: 'carer', label: 'Carer acting for a patient', steps: carerSteps },
+    'carer-denied': { id: 'carer-denied', label: 'Carer — authority denied on review', steps: carerDenied },
   },
 };
