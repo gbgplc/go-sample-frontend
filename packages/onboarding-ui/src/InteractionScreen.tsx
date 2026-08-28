@@ -1,0 +1,158 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Button } from '@gbg-go/design-system';
+import { Interaction } from '@gbg-go/onboarding-core';
+import { NoteBanner, StepHeader } from './screens/StepHeader';
+import { IntroScreen } from './screens/IntroScreen';
+import { FormScreen } from './screens/FormScreen';
+import { ChoiceScreen } from './screens/ChoiceScreen';
+import { CaptureScreen } from './screens/CaptureScreen';
+import { UploadScreen } from './screens/UploadScreen';
+import { ConsentScreen } from './screens/ConsentScreen';
+import { ProcessingScreen } from './screens/ProcessingScreen';
+import { ResultScreen } from './screens/ResultScreen';
+
+export interface InteractionScreenProps {
+  interaction: Interaction;
+  accent: string;
+  accentSoft: string;
+  busy: boolean;
+  fieldErrors?: Record<string, string>;
+  onSubmit: (data?: Record<string, unknown>) => void;
+  /** Uploads the file via POST /attachments and resolves with the attachment reference to submit. */
+  onUploadFile: (file: File) => Promise<string>;
+}
+
+/**
+ * Renders one of the eight screen kinds for the current interaction, plus
+ * the shared header/note/CTA every kind takes. `choice` submits itself per
+ * option and has no separate CTA — every other kind does.
+ */
+export function InteractionScreen({
+  interaction,
+  accent,
+  accentSoft,
+  busy,
+  fieldErrors,
+  onSubmit,
+  onUploadFile,
+}: InteractionScreenProps) {
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
+  const [consentValues, setConsentValues] = useState<Record<string, boolean>>({});
+  const [attachmentRef, setAttachmentRef] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    setFormValues({});
+    setAttachmentRef(null);
+    setConsentValues(
+      Object.fromEntries((interaction.checks || []).map((c) => [c.name, c.defaultChecked ?? false]))
+    );
+  }, [interaction.interactionId, interaction.checks]);
+
+  const handleFile = async (file: File) => {
+    setUploading(true);
+    try {
+      setAttachmentRef(await onUploadFile(file));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handlePrimaryCta = () => {
+    switch (interaction.kind) {
+      case 'form':
+        onSubmit(formValues);
+        return;
+      case 'consent':
+        onSubmit(consentValues);
+        return;
+      case 'upload':
+        onSubmit({ attachmentRef });
+        return;
+      default:
+        onSubmit({});
+    }
+  };
+
+  const showCta = interaction.kind !== 'choice' && interaction.kind !== 'processing';
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: '100%' }}>
+      <StepHeader interaction={interaction} />
+
+      {interaction.kind === 'intro' && <IntroScreen />}
+
+      {interaction.kind === 'form' && (
+        <FormScreen
+          fields={interaction.collects || []}
+          values={formValues}
+          onChange={(name, value) => setFormValues((v) => ({ ...v, [name]: value }))}
+          fieldErrors={fieldErrors}
+        />
+      )}
+
+      {interaction.kind === 'choice' && (
+        <ChoiceScreen
+          options={interaction.options || []}
+          accent={accent}
+          accentSoft={accentSoft}
+          disabled={busy}
+          onChoose={(value) => onSubmit({ value })}
+        />
+      )}
+
+      {interaction.kind === 'capture' && (
+        <CaptureScreen captureType={interaction.captureType} accepted={interaction.accepted} accent={accent} />
+      )}
+
+      {interaction.kind === 'upload' && (
+        <UploadScreen accepted={interaction.accepted} accent={accent} onFileSelected={handleFile} />
+      )}
+
+      {interaction.kind === 'consent' && (
+        <ConsentScreen
+          checks={interaction.checks || []}
+          values={consentValues}
+          onChange={(name, checked) => setConsentValues((v) => ({ ...v, [name]: checked }))}
+        />
+      )}
+
+      {interaction.kind === 'processing' && (
+        <ProcessingScreen moduleRuns={interaction.moduleRuns} accent={accent} onSettled={() => onSubmit({})} />
+      )}
+
+      {interaction.kind === 'result' && (
+        <ResultScreen
+          decision={interaction.decision}
+          timing={interaction.timing}
+          moduleRuns={interaction.moduleRuns}
+          summary={interaction.summary}
+          recordNote={interaction.recordNote}
+          accent={accent}
+        />
+      )}
+
+      {interaction.note && <NoteBanner note={interaction.note} accent={accent} accentSoft={accentSoft} />}
+
+      {showCta && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
+          <Button
+            fullWidth
+            disabled={busy || uploading}
+            onClick={handlePrimaryCta}
+            style={{ background: accent, borderColor: accent }}
+          >
+            {busy ? 'Please wait…' : uploading ? 'Uploading…' : interaction.cta || 'Continue'}
+          </Button>
+          {interaction.secondaryCta && (
+            <Button variant="text" fullWidth disabled={busy || uploading} onClick={handlePrimaryCta}>
+              {interaction.secondaryCta}
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,25 +1,67 @@
-# CODING AGENTS: READ THIS FIRST
+# Market onboarding applications
 
-This is a **handoff bundle** from Claude Design (claude.ai/design).
+Three standalone, independently deployable customer-facing onboarding apps —
+**Northbank** (banking), **Meridian Health** (healthcare) and **Ridgeline
+Play** (online gaming) — each driving a GBG Go journey through a thin backend
+proxy, per `project/Front-end Handoff.dc.html`. Screens, copy and responsive
+behaviour follow `project/Market Onboarding Journeys.dc.html`.
 
-A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
+No backend microservice exists yet, so every app runs against a mock
+transport that implements the same REST contract a real Java or TypeScript
+service would (`packages/onboarding-core`) — flip one env var to point an app
+at a live service instead.
 
-## What you should do — IMPORTANT
+## Layout
 
-**Read the chat transcripts first.** There are 1 chat transcript(s) in `chats/`. The transcripts show the full back-and-forth between the user and the design assistant — they tell you **what the user actually wants** and **where they landed** after iterating. Don't skip them. The final HTML files are the output, but the chat is where the intent lives.
+```
+packages/
+  design-system/     Button, Chip, IconButton, Link, StatusBadge, TextField
+                      + design tokens — ported from the GBG Go Platform UI bundle
+  onboarding-core/    Types, the REST contract (RestTransport), the mock
+                      transport + fixture schema, and the 7-state session hook
+  onboarding-ui/      The 8 screen-kind renderers, the responsive shell
+                      (mobile app bar vs. web stage rail), OnboardingApp
+apps/
+  northbank/          Banking — straight-through and address-referral scenarios
+  meridian-health/    Healthcare — patient and carer scenarios
+  ridgeline-play/     Gaming — instant pass, step-up and jurisdiction-block
+```
 
-**Read `project/Market Onboarding Journeys.dc.html` in full.** The user had this file open when they triggered the handoff, so it's almost certainly the primary design they want built. Read it top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.
+## Running an app
 
-**If anything is ambiguous, ask the user to confirm before you start implementing.** It's much cheaper to clarify scope up front than to build the wrong thing.
+```
+npm install
+npm run dev:northbank        # or dev:meridian-health / dev:ridgeline-play
+```
 
-## About the design files
+Each app defaults to mock mode. To reach a specific designed outcome, add
+`?mock_scenario=<id>` to the URL — e.g. `?mock_scenario=refer` on Northbank,
+`?mock_scenario=carer` on Meridian Health, `?mock_scenario=stepup` or
+`?mock_scenario=blocked` on Ridgeline Play. (See each app's
+`onboarding.config.ts` for the full scenario list.)
 
-The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is to **recreate them pixel-perfectly** in whatever technology makes sense for the target codebase (React, Vue, native, whatever fits). Match the visual output; don't copy the prototype's internal structure unless it happens to fit.
+To point an app at a real backend once one exists:
 
-**Don't render these files in a browser or take screenshots unless the user asks you to.** Everything you need — dimensions, colors, layout rules — is spelled out in the source. Read the HTML and CSS directly; a screenshot won't tell you anything they don't.
+```
+NEXT_PUBLIC_ONBOARDING_TRANSPORT=rest
+NEXT_PUBLIC_API_BASE_URL=https://your-onboarding-service
+```
 
-## Bundle contents
+## Build / typecheck everything
 
-- `README.md` — this file
-- `chats/` — conversation transcripts (read these!)
-- `project/` — the `Waiting for design scope` project files (HTML prototypes, assets, components)
+```
+npm run build
+npm run typecheck
+```
+
+## Known simplifications
+
+- Document and selfie capture are placeholders (front-end handoff, section 6)
+  — swap `CaptureScreen` for GBG's Web SDK once that decision lands.
+- The stage rail only ever shows stages already visited plus the current one,
+  never the full journey ahead — the client doesn't know the total step count
+  up front, by design (screen order comes from the interaction response, not
+  a client-side route table).
+- `ProcessingScreen` resolves on a fixed timer against the mock transport; a
+  live `RestTransport` would instead poll `GET /state` until the status
+  leaves `InProgress`.

@@ -1,0 +1,22 @@
+@keyframes onb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes onb-scan {
+  0% {
+    transform: translateY(-42px);
+  }
+  100% {
+    transform: translateY(42px);
+  }
+}
+
+.onb-scan-line {
+  animation: onb-scan 2.2s ease-in-out infinite alternate;
+}
+
+.onb-spinner {
+  animation: onb-spin 900ms linear infinite;
+}

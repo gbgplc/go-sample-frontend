@@ -1,0 +1,173 @@
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--gbg-font-stack);
+  background: var(--gbg-surface-page);
+}
+
+/* ---------- Mobile chrome: app bar + progress bar, shown under 768px ---------- */
+
+.mobileBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--gbg-charcoal-100);
+  flex: none;
+}
+
+.mobileMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  flex: none;
+}
+
+.mobileName {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gbg-charcoal-700);
+}
+
+.mobileStage {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gbg-charcoal-400);
+}
+
+.mobileProgressTrack {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--gbg-charcoal-100);
+  overflow: hidden;
+  flex: none;
+  margin: 0 20px 16px;
+}
+
+.mobileProgressFill {
+  height: 100%;
+  transition: width 240ms ease;
+}
+
+.body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* ---------- Web chrome: left stage rail, shown from 768px ---------- */
+
+.rail {
+  display: none;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.mainInner {
+  width: 100%;
+  max-width: 480px;
+}
+
+@media (min-width: 768px) {
+  .mobileBar,
+  .mobileProgressTrack {
+    display: none;
+  }
+
+  .rail {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    width: 260px;
+    flex: none;
+    padding: 32px 28px;
+    border-right: 1px solid var(--gbg-charcoal-200);
+  }
+
+  .main {
+    padding: 56px 40px;
+  }
+
+  .mainInner {
+    max-width: 440px;
+  }
+}
+
+@media (min-width: 1000px) {
+  .rail {
+    width: 312px;
+  }
+
+  .main {
+    padding: 56px 64px;
+  }
+}
+
+.railHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.railMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  flex: none;
+}
+
+.railName {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--gbg-charcoal-700);
+}
+
+.stageList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stageRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  font-size: 13px;
+}
+
+.railSpacer {
+  flex: 1;
+}
+
+.railHelpLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gbg-charcoal-500);
+}
+
+.railHelpLine {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--gbg-charcoal-400);
+}
