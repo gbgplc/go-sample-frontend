@@ -69,6 +69,7 @@ export function InteractionScreen({
         onSubmit(consentValues);
         return;
       case 'upload':
+      case 'capture':
         onSubmit({ attachmentRef });
         return;
       default:
@@ -77,6 +78,8 @@ export function InteractionScreen({
   };
 
   const showCta = interaction.kind !== 'choice' && interaction.kind !== 'processing';
+  const needsAttachment = interaction.kind === 'upload' || interaction.kind === 'capture';
+  const ctaDisabled = busy || uploading || (needsAttachment && !attachmentRef);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: '100%' }}>
@@ -104,7 +107,12 @@ export function InteractionScreen({
       )}
 
       {interaction.kind === 'capture' && (
-        <CaptureScreen captureType={interaction.captureType} accepted={interaction.accepted} accent={accent} />
+        <CaptureScreen
+          captureType={interaction.captureType}
+          accepted={interaction.accepted}
+          accent={accent}
+          onCaptured={handleFile}
+        />
       )}
 
       {interaction.kind === 'upload' && (
@@ -140,7 +148,7 @@ export function InteractionScreen({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
           <Button
             fullWidth
-            disabled={busy || uploading}
+            disabled={ctaDisabled}
             onClick={handlePrimaryCta}
             style={{ background: accent, borderColor: accent }}
           >
