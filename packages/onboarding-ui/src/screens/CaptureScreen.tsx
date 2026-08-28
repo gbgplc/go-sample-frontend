@@ -183,20 +183,30 @@ export function CaptureScreen({ captureType, accepted, accent, onCaptured }: Cap
       <canvas ref={canvasRef} style={{ display: 'none' }} />
 
       {phase === 'live' && (
-        <button
-          type="button"
-          onClick={snap}
-          aria-label={isSelfie ? 'Take selfie photo' : 'Capture document photo'}
-          style={{
-            alignSelf: 'center',
-            width: 56,
-            height: 56,
-            borderRadius: '50%',
-            border: `3px solid ${accent}`,
-            background: '#fff',
-            cursor: 'pointer',
-          }}
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+          <button
+            type="button"
+            onClick={snap}
+            aria-label={isSelfie ? 'Take selfie photo' : 'Capture document photo'}
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: '50%',
+              border: 'none',
+              background: accent,
+              boxShadow: '0 2px 10px rgba(0,0,0,.28)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <i className="ph-bold ph-camera" style={{ fontSize: 26, color: '#fff' }} />
+          </button>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--gbg-charcoal-700)' }}>
+            {isSelfie ? 'Tap to take selfie' : 'Tap to capture photo'}
+          </span>
+        </div>
       )}
 
       {phase === 'captured' && (
