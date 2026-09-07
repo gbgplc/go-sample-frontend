@@ -81,6 +81,22 @@ export function InteractionScreen({
     }
   };
 
+  // Checks settle in a few seconds. Past eight, say something: a spinner that
+  // has not moved reads as broken, and a customer who reloads mid-verification
+  // loses the journey.
+  const [slowNotice, setSlowNotice] = useState<string | undefined>();
+  useEffect(() => {
+    if (interaction.kind !== 'processing') {
+      setSlowNotice(undefined);
+      return;
+    }
+    const timer = setTimeout(
+      () => setSlowNotice('This is taking longer than usual. Please keep this page open.'),
+      8000
+    );
+    return () => clearTimeout(timer);
+  }, [interaction.kind, interaction.interactionId]);
+
   const showCta = interaction.kind !== 'choice' && interaction.kind !== 'processing';
   const needsAttachment = interaction.kind === 'upload' || interaction.kind === 'capture';
   const ctaDisabled = busy || uploading || (needsAttachment && !attachmentRef);
@@ -137,7 +153,12 @@ export function InteractionScreen({
       )}
 
       {interaction.kind === 'processing' && (
-        <ProcessingScreen moduleRuns={interaction.moduleRuns} accent={accent} onSettled={() => onSubmit({})} />
+        <ProcessingScreen
+          moduleRuns={interaction.moduleRuns}
+          accent={accent}
+          onSettled={() => onSubmit({})}
+          slowNotice={slowNotice}
+        />
       )}
 
       {interaction.kind === 'result' && (

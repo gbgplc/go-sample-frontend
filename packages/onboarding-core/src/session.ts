@@ -164,5 +164,52 @@ export function useOnboardingSession(
     start();
   }, [start]);
 
+  /**
+   * While the journey is processing, ask the platform whether it has settled
+   * rather than guessing.
+   *
+   * A `processing` interaction means Go is running modules, and only Go knows
+   * when that is done — measured at about three seconds against the demo
+   * tenant, but that is a sample of one journey on one day, not a guarantee.
+   * So this polls `getState` every second until the status leaves
+   * `InProgress`, then fetches the record and lands on the decision.
+   *
+   * Note that a *failed* journey is also terminal. Go reports an abandoned
+   * journey as `Error`, the service maps that to `Completed` carrying a
+   * `fail` decision, and it arrives here as an ordinary settle — which is
+   * what stops the customer waiting on a spinner for a journey that will
+   * never advance. The GBG docs are explicit that an abandoned journey is not
+   * retryable: starting again is the only way forward, which is what the
+   * result screen's CTA does.
+   */
+  useEffect(() => {
+    if (state.phase !== 'processing' || !state.sessionId) return;
+    const sessionId = state.sessionId;
+    let cancelled = false;
+
+    const poll = async () => {
+      try {
+        const res = await transport.getState(sessionId);
+        if (cancelled) return;
+        if (res.status !== 'InProgress') {
+          const record = await transport.getRecord(sessionId);
+          if (!cancelled) dispatch({ type: 'DECIDED', record });
+        }
+      } catch (e) {
+        // A single failed poll is not a failed journey — the next tick
+        // retries. Only a hard transport error ends it.
+        const envelope = toEnvelope(e);
+        if (!cancelled && !envelope.retryable) dispatch({ type: 'FAILED', error: envelope });
+      }
+    };
+
+    poll();
+    const timer = setInterval(poll, 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [state.phase, state.sessionId, transport]);
+
   return { ...state, submit, restart, begin };
 }
