@@ -34,6 +34,7 @@ export function Button({
   const isSmall = size === 'small';
   const isError = color === 'error';
   const [hover, setHover] = useState(false);
+  const [focusVisible, setFocusVisible] = useState(false);
 
   const base: React.CSSProperties = {
     height: isSmall ? 32 : 48,
@@ -72,10 +73,14 @@ export function Button({
     },
   };
 
+  // charcoal-400 (#787887) on charcoal-200 (#E3E3E8) is 3.4:1 — under the
+  // 4.5:1 floor, and this label carries the one instruction on the screen
+  // ("Scan document"). charcoal-500 on charcoal-100 reaches 7.4:1 and still
+  // reads as clearly unavailable next to a filled button.
   const disabledStyle: React.CSSProperties = disabled
     ? variant === 'outlined'
-      ? { background: '#fff', color: 'var(--gbg-charcoal-300)', borderColor: 'var(--gbg-charcoal-200)' }
-      : { background: 'var(--gbg-charcoal-200)', color: 'var(--gbg-charcoal-400)', borderColor: 'transparent' }
+      ? { background: '#fff', color: 'var(--gbg-charcoal-500)', borderColor: 'var(--gbg-charcoal-300)' }
+      : { background: 'var(--gbg-charcoal-100)', color: 'var(--gbg-charcoal-500)', borderColor: 'var(--gbg-charcoal-200)' }
     : {};
 
   const hoverStyle: React.CSSProperties =
@@ -85,14 +90,46 @@ export function Button({
         : { background: 'var(--gbg-hyacinth-50)' }
       : {};
 
+  // A caller's `style` overrides the variant — that is how each market applies
+  // its brand colour — but it must not override the disabled treatment. An app
+  // passing `background: accent` alongside `disabled` otherwise keeps the full
+  // brand fill and loses only the text colour, leaving grey-on-green: about
+  // 1.6:1, unreadable, and it still reads as a button you can press.
+  const composed: React.CSSProperties = disabled
+    ? { ...base, ...variants[variant], ...style, ...disabledStyle }
+    : { ...base, ...variants[variant], ...hoverStyle, ...style };
+
+  // Keyboard focus needs to be visible, and an offset ring stays visible over
+  // a brand fill of any colour — a border or inset ring disappears into it.
+  if (focusVisible && !disabled) {
+    composed.outline = '3px solid var(--gbg-charcoal-700)';
+    composed.outlineOffset = 2;
+  }
+
   return (
     <button
+      {...rest}
       type={type}
       disabled={disabled}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{ ...base, ...variants[variant], ...disabledStyle, ...hoverStyle, ...style }}
-      {...rest}
+      aria-disabled={disabled || undefined}
+      onMouseEnter={(e) => {
+        setHover(true);
+        rest.onMouseEnter?.(e);
+      }}
+      onMouseLeave={(e) => {
+        setHover(false);
+        rest.onMouseLeave?.(e);
+      }}
+      // :focus-visible, so a ring appears for keyboard users but not on tap.
+      onFocus={(e) => {
+        if (e.currentTarget.matches(':focus-visible')) setFocusVisible(true);
+        rest.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        setFocusVisible(false);
+        rest.onBlur?.(e);
+      }}
+      style={composed}
     >
       {startIcon}
       {children}
