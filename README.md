@@ -102,12 +102,16 @@ npm run typecheck
 
 ## Known simplifications
 
-- Document and selfie capture are placeholders (front-end handoff, section 6)
-  — swap `CaptureScreen` for GBG's Web SDK once that decision lands.
+- `CaptureScreen` is a real camera surface (`getUserMedia` + shutter, with a
+  file-picker fallback), not a production capture SDK: no glare or blur
+  detection, and no on-device quality checks before submission. GBG does not
+  ship an installable capture component for a fully custom UI, so this is the
+  documented DIY pattern rather than a placeholder.
 - The stage rail only ever shows stages already visited plus the current one,
   never the full journey ahead — the client doesn't know the total step count
   up front, by design (screen order comes from the interaction response, not
   a client-side route table).
-- `ProcessingScreen` resolves on a fixed timer against the mock transport; a
-  live `RestTransport` would instead poll `GET /state` until the status
-  leaves `InProgress`.
+- Against a live journey `ProcessingScreen` is settled by a `GET /state` poll
+  in `useOnboardingSession`, once a second until the status leaves
+  `InProgress`. Its own 20-second timer is only a backstop for a transport
+  that reports no state, which is the sole reason the mock leaves that screen.
