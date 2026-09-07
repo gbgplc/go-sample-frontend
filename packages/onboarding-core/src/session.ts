@@ -88,11 +88,23 @@ export interface UseOnboardingSession extends SessionState {
   submit: (data?: Record<string, unknown>) => Promise<void>;
   /** Begin a fresh session from idle — used after a failure or an explicit restart. */
   restart: () => void;
+  /** Start a deferred journey (see the `deferStart` argument). No-op otherwise. */
+  begin: () => void;
 }
 
 export function useOnboardingSession(
   transport: OnboardingTransport,
-  prefill?: Record<string, unknown>
+  prefill?: Record<string, unknown>,
+  /**
+   * Hold in `idle` until {@link UseOnboardingSession.begin} is called, instead
+   * of starting a journey on mount.
+   *
+   * Starting on mount means every page view creates a journey instance,
+   * including the ones where somebody opens the link, reads the first
+   * paragraph and closes the tab. Deferring lets an app show its own welcome
+   * first and only reach the platform when the customer commits.
+   */
+  deferStart = false
 ): UseOnboardingSession {
   const [state, dispatch] = useReducer(reducer, { phase: 'idle' });
   const startedRef = useRef(false);
@@ -109,6 +121,13 @@ export function useOnboardingSession(
   }, [transport]);
 
   useEffect(() => {
+    if (deferStart || startedRef.current) return;
+    startedRef.current = true;
+    start();
+  }, [start, deferStart]);
+
+  /** Start the journey from a deferred `idle`. A no-op once one is running. */
+  const begin = useCallback(() => {
     if (startedRef.current) return;
     startedRef.current = true;
     start();
@@ -139,9 +158,11 @@ export function useOnboardingSession(
   );
 
   const restart = useCallback(() => {
-    startedRef.current = false;
+    // Stays true: a restart starts a journey immediately, so leaving it false
+    // would let the deferred-start effect fire a second one behind it.
+    startedRef.current = true;
     start();
   }, [start]);
 
-  return { ...state, submit, restart };
+  return { ...state, submit, restart, begin };
 }

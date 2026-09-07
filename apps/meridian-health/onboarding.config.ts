@@ -10,6 +10,9 @@ export const config: AppConfig = {
   journeyName: 'Patient record access',
   resourceId: 'jny_patient_record_v3@latest',
 
+  welcomeTitle: 'See your health record online',
+  welcomeCta: 'Verify my identity',
+
   purpose:
     'Meridian Health is your GP practice online. Book appointments, read test results, order repeat prescriptions and message your care team — all in one place.',
 

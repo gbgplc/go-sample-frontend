@@ -149,6 +149,10 @@ export interface AppConfig {
    * being asked to photograph their passport reasonably wants both.
    */
   purpose?: string;
+  /** Heading for the welcome screen. Defaults to "Welcome to {brand}". */
+  welcomeTitle?: string;
+  /** Label on the button that starts the journey. Defaults to "Get started". */
+  welcomeCta?: string;
   /** Three or four reassurances — data handling, retention, alternatives. */
   trustPoints?: TrustPoint[];
   /** What the customer gets once verified. */
