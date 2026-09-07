@@ -150,6 +150,7 @@ export function OnboardingApp({ transport, config }: OnboardingAppProps) {
         fieldErrors={session.fieldErrors}
         onSubmit={session.submit}
         onUploadFile={handleUploadFile}
+        config={config}
       />
     </AppShell>
   );

@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@gbg-go/design-system';
-import { Interaction } from '@gbg-go/onboarding-core';
+import { AppConfig, Interaction } from '@gbg-go/onboarding-core';
 import { NoteBanner, StepHeader } from './screens/StepHeader';
 import { IntroScreen } from './screens/IntroScreen';
+import { WelcomeCard } from './screens/WelcomeCard';
 import { FormScreen } from './screens/FormScreen';
 import { ChoiceScreen } from './screens/ChoiceScreen';
 import { CaptureScreen } from './screens/CaptureScreen';
@@ -22,6 +23,8 @@ export interface InteractionScreenProps {
   onSubmit: (data?: Record<string, unknown>) => void;
   /** Uploads the file via POST /attachments and resolves with the attachment reference to submit. */
   onUploadFile: (file: File) => Promise<string>;
+  /** Supplies the intro screen's optional "who is asking, and why" content. */
+  config?: AppConfig;
 }
 
 /**
@@ -37,6 +40,7 @@ export function InteractionScreen({
   fieldErrors,
   onSubmit,
   onUploadFile,
+  config,
 }: InteractionScreenProps) {
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [consentValues, setConsentValues] = useState<Record<string, boolean>>({});
@@ -85,7 +89,12 @@ export function InteractionScreen({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: '100%' }}>
       <StepHeader interaction={interaction} />
 
-      {interaction.kind === 'intro' && <IntroScreen />}
+      {interaction.kind === 'intro' && (
+        <>
+          {config && <WelcomeCard config={config} />}
+          <IntroScreen />
+        </>
+      )}
 
       {interaction.kind === 'form' && (
         <FormScreen
