@@ -162,8 +162,24 @@ export function OnboardingApp({ transport, config }: OnboardingAppProps) {
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--gbg-charcoal-700)' }}>{r.title}</div>
-            <p style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--gbg-charcoal-500)' }}>{r.body}</p>
+            <h1
+              style={{
+                margin: 0,
+                fontFamily: 'var(--gbg-font-stack)',
+                fontSize: 24,
+                fontWeight: 800,
+                lineHeight: 1.25,
+                letterSpacing: '-0.015em',
+                color: 'var(--gbg-charcoal-700)',
+              }}
+            >
+              {r.title}
+            </h1>
+            {/* Guarded: a journey that ends without a body would otherwise
+                render the string "null" at the customer. */}
+            {r.body && (
+              <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: 'var(--gbg-charcoal-500)' }}>{r.body}</p>
+            )}
           </div>
           <ResultScreen
             decision={r.decision}
@@ -172,6 +188,10 @@ export function OnboardingApp({ transport, config }: OnboardingAppProps) {
             summary={r.summary}
             recordNote={r.recordNote}
             accent={config.accent}
+            // A decline reached by evaluation always names the modules that
+            // reached it. A `fail` with nothing to show is the platform having
+            // errored, not a verdict on this customer.
+            systemError={r.decision === 'fail' && (r.moduleRuns?.length ?? 0) === 0}
           />
           <Button
             fullWidth

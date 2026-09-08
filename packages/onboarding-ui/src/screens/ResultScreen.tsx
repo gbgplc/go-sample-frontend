@@ -8,6 +8,12 @@ export interface ResultScreenProps {
   summary?: SummaryRow[];
   recordNote?: string;
   accent: string;
+  /**
+   * The checks could not run, as opposed to running and declining. Shown
+   * differently because the two mean opposite things to the customer: a
+   * decline is a verdict to appeal, an error is a reason to try again.
+   */
+  systemError?: boolean;
 }
 
 const DECISION_TONE: Record<string, { icon: string; color: string; bg: string; label: string }> = {
@@ -16,8 +22,17 @@ const DECISION_TONE: Record<string, { icon: string; color: string; bg: string; l
   fail: { icon: 'ph-x', color: 'var(--gbg-red-500)', bg: 'var(--gbg-red-100)', label: 'Declined' },
 };
 
-export function ResultScreen({ decision, timing, moduleRuns, summary, recordNote, accent }: ResultScreenProps) {
-  const tone = DECISION_TONE[decision || 'pass'];
+// Amber and a warning mark, not red and a cross: nothing was decided about
+// this person, and the badge should not imply otherwise.
+const ERROR_TONE = {
+  icon: 'ph-warning',
+  color: 'var(--gbg-orange-700)',
+  bg: 'var(--gbg-orange-100)',
+  label: 'Not completed',
+};
+
+export function ResultScreen({ decision, timing, moduleRuns, summary, recordNote, accent, systemError }: ResultScreenProps) {
+  const tone = systemError ? ERROR_TONE : DECISION_TONE[decision || 'pass'];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
