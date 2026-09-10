@@ -125,6 +125,15 @@ export interface RecordResponse {
   moduleRuns: ModuleRun[];
   summary: SummaryRow[];
   recordNote?: string;
+  /**
+   * The checks could not run, as opposed to running and declining.
+   *
+   * Both arrive as `decision: 'fail'`, and they mean opposite things to the
+   * customer — a decline is a verdict to appeal, an error is a reason to try
+   * again — so the service says which it is rather than leaving the client to
+   * infer it. Optional for the mock, which has no such fixture.
+   */
+  systemError?: boolean;
 }
 
 /** One reassurance shown while the customer decides whether to start. */

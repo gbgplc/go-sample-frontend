@@ -200,10 +200,14 @@ export function OnboardingApp({ transport, config }: OnboardingAppProps) {
             summary={r.summary}
             recordNote={r.recordNote}
             accent={config.accent}
-            // A decline reached by evaluation always names the modules that
-            // reached it. A `fail` with nothing to show is the platform having
-            // errored, not a verdict on this customer.
-            systemError={r.decision === 'fail' && (r.moduleRuns?.length ?? 0) === 0}
+            // The service already knows whether the checks ran, and says so.
+            // Inferring it here from an empty moduleRuns was wrong whenever a
+            // module errored partway: Document Classification failing to
+            // execute leaves one run on the record, so the badge read
+            // "Declined" in red under a heading that said the checks could
+            // not run — telling the customer they were rejected when nothing
+            // had been decided about them.
+            systemError={r.systemError}
           />
           <Button
             fullWidth
