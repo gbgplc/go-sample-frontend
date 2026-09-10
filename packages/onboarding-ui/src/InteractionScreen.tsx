@@ -47,13 +47,28 @@ export function InteractionScreen({
   const [attachmentRef, setAttachmentRef] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  // Resets on interaction.stage, not interaction.interactionId. Against a
+  // live Go journey, interactionId is one value for the whole collection
+  // phase (segment1@latest) — every screen from "About you" through
+  // "Biometrics" shares it, because Go returns a single interaction and the
+  // client splits it into screens (session.ts, GoApiClient). Resetting on it
+  // never fires between screens, so a value typed on one screen was still in
+  // formValues on the next, submitted alongside that screen's own fields.
+  //
+  // On Northbank that meant contact-details submitted MothersMaidenName,
+  // Gender and NationalInsuranceNumber a second time along with the new
+  // email/phone fields — Go rejected the resubmission with a bare 500
+  // ("Unknown error occurred"), which reached the customer as a dead-end
+  // "Something went wrong" after every screen past the first. `stage` is the
+  // per-screen label ("About you", "Contact details", ...) and does change
+  // on every screen, live or mock.
   useEffect(() => {
     setFormValues({});
     setAttachmentRef(null);
     setConsentValues(
       Object.fromEntries((interaction.checks || []).map((c) => [c.name, c.defaultChecked ?? false]))
     );
-  }, [interaction.interactionId, interaction.checks]);
+  }, [interaction.stage, interaction.checks]);
 
   const handleFile = async (file: File) => {
     setUploading(true);

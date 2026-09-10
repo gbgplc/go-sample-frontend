@@ -1,9 +1,9 @@
 import { ModuleRun, SummaryRow } from '@gbg-go/onboarding-core';
-import { moduleIconColor } from './moduleState';
 
 export interface ResultScreenProps {
   decision?: 'pass' | 'refer' | 'fail';
   timing?: string;
+  /** Carried for callers and the record; deliberately not rendered here. */
   moduleRuns?: ModuleRun[];
   summary?: SummaryRow[];
   recordNote?: string;
@@ -31,7 +31,7 @@ const ERROR_TONE = {
   label: 'Not completed',
 };
 
-export function ResultScreen({ decision, timing, moduleRuns, summary, recordNote, accent, systemError }: ResultScreenProps) {
+export function ResultScreen({ decision, timing, summary, recordNote, accent, systemError }: ResultScreenProps) {
   const tone = systemError ? ERROR_TONE : DECISION_TONE[decision || 'pass'];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -55,36 +55,16 @@ export function ResultScreen({ decision, timing, moduleRuns, summary, recordNote
         </span>
       </div>
 
-      {moduleRuns && moduleRuns.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <div className="gbg-eyebrow" style={{ paddingBottom: 8 }}>
-            Modules run
-          </div>
-          {moduleRuns.map((m) => {
-            const { icon, color } = moduleIconColor(m.state);
-            return (
-              <div
-                key={m.label}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '10px 0',
-                  borderTop: '1px solid var(--gbg-charcoal-100)',
-                }}
-              >
-                <i className={`ph-bold ${icon}`} style={{ fontSize: 15, color }} />
-                <span style={{ flex: 1, fontSize: 13, color: 'var(--gbg-charcoal-500)' }}>{m.label}</span>
-                {m.ms && <span style={{ fontSize: 12, color: 'var(--gbg-charcoal-300)' }}>{m.ms}</span>}
-                <span style={{ fontSize: 12, fontWeight: 600, color, minWidth: 52, textAlign: 'right' }}>
-                  {m.state}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
+      {/*
+        No module list. The customer is owed the outcome — approved, referred,
+        declined — not the internal check names that produced it. "Document
+        Classification: Review" beside "Your identity has been verified" reads
+        as a contradiction to anyone who does not know that Review here means
+        "ran, no adverse finding", and one raw node id
+        (mtv5fywgiy4eoqupxi) surfaces where a module has no display name at
+        all. The runs still travel on the record for the operator-facing view
+        and for support; this screen just does not render them.
+      */}
       {summary && summary.length > 0 && (
         <div style={{ border: '1px solid var(--gbg-charcoal-200)', borderRadius: 8, overflow: 'hidden' }}>
           <div

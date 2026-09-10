@@ -134,7 +134,19 @@ export function OnboardingApp({ transport, config }: OnboardingAppProps) {
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--gbg-charcoal-700)' }}>
-            {session.error?.code === 'SESSION_EXPIRED' ? 'Your session ended' : 'Something went wrong'}
+            {/*
+              A journey that stopped advancing is not the same as a service
+              that broke, and "Something went wrong" reads as the latter —
+              which invites the customer to assume a decision was reached
+              about them. Distinguished by the timeout's own non-retryable
+              UPSTREAM_UNAVAILABLE, whose message says what is actually
+              known: the checks did not finish.
+            */}
+            {session.error?.code === 'SESSION_EXPIRED'
+              ? 'Your session ended'
+              : session.error?.retryable === false
+                ? 'We could not finish your checks'
+                : 'Something went wrong'}
           </div>
           <p style={{ fontSize: 14, color: 'var(--gbg-charcoal-500)' }}>
             {session.error?.message || 'We could not reach the service. Try again.'}
