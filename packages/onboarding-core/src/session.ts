@@ -88,11 +88,23 @@ export interface UseOnboardingSession extends SessionState {
   submit: (data?: Record<string, unknown>) => Promise<void>;
   /** Begin a fresh session from idle — used after a failure or an explicit restart. */
   restart: () => void;
+  /** Start a deferred journey (see the `deferStart` argument). No-op otherwise. */
+  begin: () => void;
 }
 
 export function useOnboardingSession(
   transport: OnboardingTransport,
-  prefill?: Record<string, unknown>
+  prefill?: Record<string, unknown>,
+  /**
+   * Hold in `idle` until {@link UseOnboardingSession.begin} is called, instead
+   * of starting a journey on mount.
+   *
+   * Starting on mount means every page view creates a journey instance,
+   * including the ones where somebody opens the link, reads the first
+   * paragraph and closes the tab. Deferring lets an app show its own welcome
+   * first and only reach the platform when the customer commits.
+   */
+  deferStart = false
 ): UseOnboardingSession {
   const [state, dispatch] = useReducer(reducer, { phase: 'idle' });
   const startedRef = useRef(false);
@@ -109,6 +121,13 @@ export function useOnboardingSession(
   }, [transport]);
 
   useEffect(() => {
+    if (deferStart || startedRef.current) return;
+    startedRef.current = true;
+    start();
+  }, [start, deferStart]);
+
+  /** Start the journey from a deferred `idle`. A no-op once one is running. */
+  const begin = useCallback(() => {
     if (startedRef.current) return;
     startedRef.current = true;
     start();
@@ -139,9 +158,58 @@ export function useOnboardingSession(
   );
 
   const restart = useCallback(() => {
-    startedRef.current = false;
+    // Stays true: a restart starts a journey immediately, so leaving it false
+    // would let the deferred-start effect fire a second one behind it.
+    startedRef.current = true;
     start();
   }, [start]);
 
-  return { ...state, submit, restart };
+  /**
+   * While the journey is processing, ask the platform whether it has settled
+   * rather than guessing.
+   *
+   * A `processing` interaction means Go is running modules, and only Go knows
+   * when that is done — measured at about three seconds against the demo
+   * tenant, but that is a sample of one journey on one day, not a guarantee.
+   * So this polls `getState` every second until the status leaves
+   * `InProgress`, then fetches the record and lands on the decision.
+   *
+   * Note that a *failed* journey is also terminal. Go reports an abandoned
+   * journey as `Error`, the service maps that to `Completed` carrying a
+   * `fail` decision, and it arrives here as an ordinary settle — which is
+   * what stops the customer waiting on a spinner for a journey that will
+   * never advance. The GBG docs are explicit that an abandoned journey is not
+   * retryable: starting again is the only way forward, which is what the
+   * result screen's CTA does.
+   */
+  useEffect(() => {
+    if (state.phase !== 'processing' || !state.sessionId) return;
+    const sessionId = state.sessionId;
+    let cancelled = false;
+
+    const poll = async () => {
+      try {
+        const res = await transport.getState(sessionId);
+        if (cancelled) return;
+        if (res.status !== 'InProgress') {
+          const record = await transport.getRecord(sessionId);
+          if (!cancelled) dispatch({ type: 'DECIDED', record });
+        }
+      } catch (e) {
+        // A single failed poll is not a failed journey — the next tick
+        // retries. Only a hard transport error ends it.
+        const envelope = toEnvelope(e);
+        if (!cancelled && !envelope.retryable) dispatch({ type: 'FAILED', error: envelope });
+      }
+    };
+
+    poll();
+    const timer = setInterval(poll, 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [state.phase, state.sessionId, transport]);
+
+  return { ...state, submit, restart, begin };
 }

@@ -122,6 +122,14 @@ export interface RecordResponse {
   recordNote?: string;
 }
 
+/** One reassurance shown while the customer decides whether to start. */
+export interface TrustPoint {
+  /** Phosphor icon name, e.g. `ph-lock-simple`. */
+  icon: string;
+  title: string;
+  detail: string;
+}
+
 export interface AppConfig {
   brand: string;
   mark: string;
@@ -131,6 +139,26 @@ export interface AppConfig {
   helpLine: string;
   journeyName: string;
   resourceId: string;
+  /**
+   * What this organisation does and why it needs to verify anyone — shown on
+   * the intro screen, above the journey's own copy.
+   *
+   * All four fields below are optional: an app that sets none renders exactly
+   * as it did before. They exist because a journey answers "what do I do
+   * next", never "who is asking and why should I trust them", and a customer
+   * being asked to photograph their passport reasonably wants both.
+   */
+  purpose?: string;
+  /** Heading for the welcome screen. Defaults to "Welcome to {brand}". */
+  welcomeTitle?: string;
+  /** Label on the button that starts the journey. Defaults to "Get started". */
+  welcomeCta?: string;
+  /** Three or four reassurances — data handling, retention, alternatives. */
+  trustPoints?: TrustPoint[];
+  /** What the customer gets once verified. */
+  outcomes?: string[];
+  /** Regulatory or governance footnote for the intro screen. */
+  complianceNote?: string;
 }
 
 export type ErrorCode =

@@ -9,6 +9,52 @@ export const config: AppConfig = {
   helpLine: 'Reception can verify you in person with the same documents.',
   journeyName: 'Patient record access',
   resourceId: 'jny_patient_record_v3@latest',
+
+  welcomeTitle: 'See your health record online',
+  welcomeCta: 'Verify my identity',
+
+  purpose:
+    'Meridian Health is your GP practice online. Book appointments, read test results, order repeat prescriptions and message your care team — all in one place.',
+
+  // Healthcare identity verification is Know Your Patient, not Know Your
+  // Customer: the risk being managed is the wrong person reading a medical
+  // record, not money laundering. These four answer the questions a patient
+  // actually has when asked to photograph their passport.
+  trustPoints: [
+    {
+      icon: 'ph-lock-simple',
+      title: 'Your record stays private',
+      detail:
+        'We check your identity before showing anything. Nobody sees your record until we know it is you.',
+    },
+    {
+      icon: 'ph-shield-check',
+      title: 'Your ID is kept separately',
+      detail:
+        'Identity evidence is held apart from your medical record, and never used for anything else.',
+    },
+    {
+      icon: 'ph-clock',
+      title: 'About three minutes',
+      detail: 'Two photos and a few questions. You can stop and pick up where you left off.',
+    },
+    {
+      icon: 'ph-buildings',
+      title: 'Prefer to do this in person?',
+      detail: 'Bring the same ID to reception and a receptionist will verify you at the desk.',
+    },
+  ],
+
+  outcomes: [
+    'Book and change appointments',
+    'See test results as soon as they are ready',
+    'Order repeat prescriptions',
+    'Message your care team securely',
+    'Share your record with a pharmacy you choose',
+  ],
+
+  complianceNote:
+    'Meridian Health is registered with the Care Quality Commission. We verify identity to meet NHS information-governance standards before granting record access.',
 };
 
 // Shared prefix — identical content for every scenario; only the "Someone I

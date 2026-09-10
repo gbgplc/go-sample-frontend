@@ -1,0 +1,120 @@
+/* The intro screen's "who is asking, and why" panel. */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.purpose {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--gbg-charcoal-500);
+}
+
+/* ---------- What you get ---------- */
+
+.outcomes {
+  border-radius: 8px;
+  padding: 16px 18px;
+}
+
+.outcomesHeading {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gbg-charcoal-600);
+}
+
+.outcomeList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 7px;
+}
+
+.outcomeItem {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--gbg-charcoal-600);
+}
+
+.outcomeItem i {
+  font-size: 15px;
+  margin-top: 1px;
+  flex: 0 0 auto;
+}
+
+/* ---------- Reassurances ---------- */
+
+.trustList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 14px;
+}
+
+.trustItem {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.trustIcon {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+}
+
+.trustText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trustTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gbg-charcoal-700);
+  line-height: 1.35;
+}
+
+.trustDetail {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--gbg-charcoal-500);
+}
+
+/* ---------- Footnote ---------- */
+
+.compliance {
+  margin: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--gbg-charcoal-100);
+  font-size: 12px;
+  line-height: 1.55;
+  /* charcoal-400 on white is 4.6:1 — above the 4.5:1 floor for body text,
+     which small print has no exemption from. */
+  color: var(--gbg-charcoal-400);
+}
+
+/* Two columns of reassurances once there is room for them to stay readable. */
+@media (min-width: 720px) {
+  .trustList {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 20px;
+  }
+}

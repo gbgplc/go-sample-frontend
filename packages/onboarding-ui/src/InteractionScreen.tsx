@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@gbg-go/design-system';
-import { Interaction } from '@gbg-go/onboarding-core';
+import { AppConfig, Interaction } from '@gbg-go/onboarding-core';
 import { NoteBanner, StepHeader } from './screens/StepHeader';
 import { IntroScreen } from './screens/IntroScreen';
+import { WelcomeCard } from './screens/WelcomeCard';
 import { FormScreen } from './screens/FormScreen';
 import { ChoiceScreen } from './screens/ChoiceScreen';
 import { CaptureScreen } from './screens/CaptureScreen';
@@ -22,6 +23,8 @@ export interface InteractionScreenProps {
   onSubmit: (data?: Record<string, unknown>) => void;
   /** Uploads the file via POST /attachments and resolves with the attachment reference to submit. */
   onUploadFile: (file: File) => Promise<string>;
+  /** Supplies the intro screen's optional "who is asking, and why" content. */
+  config?: AppConfig;
 }
 
 /**
@@ -37,6 +40,7 @@ export function InteractionScreen({
   fieldErrors,
   onSubmit,
   onUploadFile,
+  config,
 }: InteractionScreenProps) {
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [consentValues, setConsentValues] = useState<Record<string, boolean>>({});
@@ -77,6 +81,22 @@ export function InteractionScreen({
     }
   };
 
+  // Checks settle in a few seconds. Past eight, say something: a spinner that
+  // has not moved reads as broken, and a customer who reloads mid-verification
+  // loses the journey.
+  const [slowNotice, setSlowNotice] = useState<string | undefined>();
+  useEffect(() => {
+    if (interaction.kind !== 'processing') {
+      setSlowNotice(undefined);
+      return;
+    }
+    const timer = setTimeout(
+      () => setSlowNotice('This is taking longer than usual. Please keep this page open.'),
+      8000
+    );
+    return () => clearTimeout(timer);
+  }, [interaction.kind, interaction.interactionId]);
+
   const showCta = interaction.kind !== 'choice' && interaction.kind !== 'processing';
   const needsAttachment = interaction.kind === 'upload' || interaction.kind === 'capture';
   const ctaDisabled = busy || uploading || (needsAttachment && !attachmentRef);
@@ -85,7 +105,12 @@ export function InteractionScreen({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: '100%' }}>
       <StepHeader interaction={interaction} />
 
-      {interaction.kind === 'intro' && <IntroScreen />}
+      {interaction.kind === 'intro' && (
+        <>
+          {config && <WelcomeCard config={config} />}
+          <IntroScreen />
+        </>
+      )}
 
       {interaction.kind === 'form' && (
         <FormScreen
@@ -128,7 +153,12 @@ export function InteractionScreen({
       )}
 
       {interaction.kind === 'processing' && (
-        <ProcessingScreen moduleRuns={interaction.moduleRuns} accent={accent} onSettled={() => onSubmit({})} />
+        <ProcessingScreen
+          moduleRuns={interaction.moduleRuns}
+          accent={accent}
+          onSettled={() => onSubmit({})}
+          slowNotice={slowNotice}
+        />
       )}
 
       {interaction.kind === 'result' && (

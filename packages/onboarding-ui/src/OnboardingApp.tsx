@@ -6,6 +6,7 @@ import { AppConfig, OnboardingTransport, useOnboardingSession } from '@gbg-go/on
 import { AppShell, ShellStage } from './shells/AppShell';
 import { InteractionScreen } from './InteractionScreen';
 import { ResultScreen } from './screens/ResultScreen';
+import { WelcomeCard } from './screens/WelcomeCard';
 
 export interface OnboardingAppProps {
   transport: OnboardingTransport;
@@ -24,7 +25,11 @@ function useVisitedStages(currentStage: string | undefined): ShellStage[] {
 }
 
 export function OnboardingApp({ transport, config }: OnboardingAppProps) {
-  const session = useOnboardingSession(transport);
+  // An app that has configured welcome content shows it first and starts the
+  // journey when the customer taps through. Without that content there is
+  // nothing to hold on, so the journey starts on mount as before.
+  const hasWelcome = Boolean(config.purpose || config.trustPoints?.length || config.outcomes?.length);
+  const session = useOnboardingSession(transport, undefined, hasWelcome);
   const currentStage = session.interaction?.stage ?? (session.phase === 'decided' ? 'Decision' : undefined);
   const fallbackStages = useVisitedStages(currentStage);
 
@@ -46,6 +51,57 @@ export function OnboardingApp({ transport, config }: OnboardingAppProps) {
     const { attachmentRef } = await transport.uploadAttachment(session.sessionId, file);
     return attachmentRef;
   };
+
+  // Deferred idle: the customer hasn't started yet, so this is the app's own
+  // welcome, not a journey screen. No platform call has been made at this
+  // point — tapping the CTA is what creates the journey instance.
+  if (session.phase === 'idle' && hasWelcome) {
+    return (
+      <AppShell
+        appName={config.brand}
+        mark={config.mark}
+        accent={config.accent}
+        accentSoft={config.accentSoft}
+        helpLine={config.helpLine}
+        currentStage="Welcome"
+        progressPct={0}
+        stages={[]}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: '100%' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <h1
+              style={{
+                margin: 0,
+                fontFamily: 'var(--gbg-font-stack)',
+                fontWeight: 800,
+                fontSize: 26,
+                lineHeight: 1.2,
+                letterSpacing: '-0.02em',
+                color: 'var(--gbg-charcoal-700)',
+              }}
+            >
+              {config.welcomeTitle || `Welcome to ${config.brand}`}
+            </h1>
+            {config.tagline && (
+              <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: 'var(--gbg-charcoal-500)' }}>
+                {config.tagline}
+              </p>
+            )}
+          </div>
+
+          <WelcomeCard config={config} />
+
+          <Button
+            fullWidth
+            onClick={session.begin}
+            style={{ background: config.accent, borderColor: config.accent }}
+          >
+            {config.welcomeCta || 'Get started'}
+          </Button>
+        </div>
+      </AppShell>
+    );
+  }
 
   if (session.phase === 'idle' || session.phase === 'starting') {
     return (
@@ -106,8 +162,24 @@ export function OnboardingApp({ transport, config }: OnboardingAppProps) {
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--gbg-charcoal-700)' }}>{r.title}</div>
-            <p style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--gbg-charcoal-500)' }}>{r.body}</p>
+            <h1
+              style={{
+                margin: 0,
+                fontFamily: 'var(--gbg-font-stack)',
+                fontSize: 24,
+                fontWeight: 800,
+                lineHeight: 1.25,
+                letterSpacing: '-0.015em',
+                color: 'var(--gbg-charcoal-700)',
+              }}
+            >
+              {r.title}
+            </h1>
+            {/* Guarded: a journey that ends without a body would otherwise
+                render the string "null" at the customer. */}
+            {r.body && (
+              <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: 'var(--gbg-charcoal-500)' }}>{r.body}</p>
+            )}
           </div>
           <ResultScreen
             decision={r.decision}
@@ -116,6 +188,10 @@ export function OnboardingApp({ transport, config }: OnboardingAppProps) {
             summary={r.summary}
             recordNote={r.recordNote}
             accent={config.accent}
+            // A decline reached by evaluation always names the modules that
+            // reached it. A `fail` with nothing to show is the platform having
+            // errored, not a verdict on this customer.
+            systemError={r.decision === 'fail' && (r.moduleRuns?.length ?? 0) === 0}
           />
           <Button
             fullWidth
@@ -150,6 +226,7 @@ export function OnboardingApp({ transport, config }: OnboardingAppProps) {
         fieldErrors={session.fieldErrors}
         onSubmit={session.submit}
         onUploadFile={handleUploadFile}
+        config={config}
       />
     </AppShell>
   );
