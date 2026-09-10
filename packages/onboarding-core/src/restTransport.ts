@@ -1,6 +1,7 @@
 import {
   AppConfig,
   ErrorEnvelope,
+  Interaction,
   OnboardingError,
   OnboardingTransport,
   RecordResponse,
@@ -64,6 +65,10 @@ export class RestTransport implements OnboardingTransport {
       method: 'POST',
       body: JSON.stringify({ interactionId, data }),
     });
+  }
+
+  getInteraction(sessionId: string): Promise<Interaction | null> {
+    return this.request(`/v1/sessions/${sessionId}/interaction`);
   }
 
   getState(sessionId: string): Promise<StateResponse> {

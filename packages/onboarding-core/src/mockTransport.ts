@@ -188,6 +188,21 @@ export class MockTransport implements OnboardingTransport {
     };
   }
 
+  async getInteraction(sessionId: string): Promise<Interaction | null> {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      throw new OnboardingError({
+        code: 'SESSION_EXPIRED',
+        http: 410,
+        message: 'Your session has ended. Start again to continue.',
+        retryable: false,
+      });
+    }
+    const step = this.currentStep(session);
+    if (!step) return null;
+    return toInteraction(step, `${sessionId}_${session.stepIndex}`, this.stagePlan(session));
+  }
+
   async getState(sessionId: string): Promise<StateResponse> {
     const session = this.sessions.get(sessionId);
     if (!session) {

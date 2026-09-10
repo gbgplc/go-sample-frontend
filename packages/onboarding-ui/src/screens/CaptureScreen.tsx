@@ -18,7 +18,7 @@ import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
  * keep the prop contract.
  */
 export interface CaptureScreenProps {
-  captureType?: 'document' | 'selfie';
+  captureType?: 'document' | 'document-back' | 'selfie';
   accepted?: string[];
   accent: string;
   onCaptured: (file: File) => void;
@@ -35,9 +35,18 @@ export function CaptureScreen({ captureType, accepted, accent, onCaptured }: Cap
   const fileInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const [phase, setPhase] = useState<Phase>('starting');
+  // Starts at the picker, never with the camera live.
+  //
+  // Opening a camera the moment a screen renders takes something from the
+  // customer before they have agreed to it: the browser prompt appears
+  // unbidden, and on a device that already granted permission the preview
+  // simply switches on — a webcam view of whoever is sitting there, on a
+  // screen asking for a passport. Choosing "Use my camera" is the consent,
+  // so the stream starts there and nowhere else.
+  const [phase, setPhase] = useState<Phase>('filePicker');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [permissionError, setPermissionError] = useState<string | null>(null);
+  const [cameraSupported, setCameraSupported] = useState(true);
 
   const stopStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -76,15 +85,34 @@ export function CaptureScreen({ captureType, accepted, accent, onCaptured }: Cap
     };
   }, [facingMode]);
 
+  // Reset to the picker whenever the screen changes what it is collecting —
+  // document, its second side, then the selfie are three uses of this
+  // component, and a stream left open from the previous one would keep the
+  // camera light on over a screen that is no longer using it.
   useEffect(() => {
     setPreviewUrl(null);
-    const cancel = startCamera();
-    return () => {
-      cancel();
-      stopStream();
-    };
+    setPermissionError(null);
+    setPhase('filePicker');
+    setCameraSupported(
+      typeof navigator !== 'undefined' && Boolean(navigator.mediaDevices?.getUserMedia)
+    );
+    return stopStream;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [captureType]);
+
+  /**
+   * Asks for the camera again after a refusal.
+   *
+   * startCamera returns a cancel function the mount effect uses on unmount;
+   * a click handler has nothing to unmount, so the return is dropped
+   * deliberately. Any stream still open is stopped first — a retry that
+   * succeeds replaces srcObject, and the old tracks would otherwise stay
+   * live with the camera light on.
+   */
+  const retryCamera = () => {
+    stopStream();
+    startCamera();
+  };
 
   const snap = () => {
     const video = videoRef.current;
@@ -246,16 +274,58 @@ export function CaptureScreen({ captureType, accepted, accent, onCaptured }: Cap
               font: 'inherit',
             }}
           >
-            <i className="ph-bold ph-camera" style={{ fontSize: 22, color: accent }} />
+            <i className="ph-bold ph-image-square" style={{ fontSize: 22, color: accent }} />
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--gbg-charcoal-700)' }}>
-              {isSelfie ? 'Take or choose a selfie' : 'Take or choose a photo'}
+              {isSelfie ? 'Choose a selfie' : 'Choose a photo'}
             </div>
-            {permissionError && (
-              <div style={{ fontSize: 11, color: 'var(--gbg-charcoal-400)', textAlign: 'center' }}>
-                Camera unavailable — using file picker instead.
-              </div>
-            )}
+            <div style={{ fontSize: 11, color: 'var(--gbg-charcoal-400)', textAlign: 'center' }}>
+              {permissionError
+                ? 'Camera unavailable — choose a photo instead.'
+                : 'Or upload from this device'}
+            </div>
           </button>
+
+          {/*
+            The camera, opened only when the customer asks for it. Shown
+            whenever the browser has a camera API at all — not just after a
+            refusal — because this screen no longer starts a stream on mount,
+            so without it there is no route to the camera whatsoever.
+            getUserMedia re-prompts where the earlier decision was "dismissed"
+            and resolves straight away where it has since been granted.
+          */}
+          {cameraSupported && (
+            <button
+              type="button"
+              onClick={retryCamera}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                padding: '10px 14px',
+                border: '1px solid var(--gbg-charcoal-300)',
+                borderRadius: 8,
+                background: 'transparent',
+                color: 'var(--gbg-charcoal-700)',
+                font: 'inherit',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              <i className="ph-bold ph-video-camera" style={{ fontSize: 16, color: accent }} />
+              {isSelfie ? 'Use my camera' : 'Use my camera to scan'}
+            </button>
+          )}
+
+          {permissionError && (
+            <div style={{ fontSize: 11, color: 'var(--gbg-charcoal-400)', lineHeight: 1.5 }}>
+              If nothing happens, your browser is remembering an earlier
+              refusal: allow camera access for this site in the address bar,
+              then choose “Use my camera”.
+            </div>
+          )}
+
           <input
             ref={fileInputRef}
             type="file"

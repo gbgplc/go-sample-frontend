@@ -75,7 +75,12 @@ export interface Interaction {
   note?: string;
   cta?: string;
   secondaryCta?: string;
-  captureType?: 'document' | 'selfie';
+  /**
+   * 'document-back' is the second side of a two-sided document: the same
+   * rear-facing capture as 'document', distinct so the screen can say which
+   * side is wanted and the backend can route it to PrimaryDocument/side2Image.
+   */
+  captureType?: 'document' | 'document-back' | 'selfie';
   accepted?: string[];
   collects?: FieldSchema[];
   options?: ChoiceOption[];
@@ -193,6 +198,14 @@ export interface OnboardingTransport {
     interactionId: string,
     data: Record<string, unknown>
   ): Promise<SubmitInteractionResponse>;
+  /**
+   * The screen the journey is currently on.
+   *
+   * Needed while processing as well as while collecting: a journey can
+   * return to a collection screen after modules have started (the back of a
+   * two-sided document, asked for once Classification has read the front).
+   */
+  getInteraction(sessionId: string): Promise<Interaction | null>;
   getState(sessionId: string): Promise<StateResponse>;
   getRecord(sessionId: string): Promise<RecordResponse>;
   uploadAttachment(sessionId: string, file: File): Promise<{ attachmentRef: string }>;
