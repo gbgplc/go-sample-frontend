@@ -3,6 +3,14 @@ import { FieldSchema } from '@gbg-go/onboarding-core';
 
 export interface FormScreenProps {
   fields: FieldSchema[];
+  /**
+   * Whether these fields carry real requirement data.
+   *
+   * True for a live journey, whose `collects` says which refs are required.
+   * The mock's fixtures do not set `required` at all, so marking there would
+   * label every field Optional.
+   */
+  showOptional?: boolean;
   values: Record<string, string>;
   onChange: (name: string, value: string) => void;
   fieldErrors?: Record<string, string>;
@@ -10,7 +18,7 @@ export interface FormScreenProps {
 
 const HTML_TYPE: Record<string, string> = { date: 'text', tel: 'tel', email: 'email', postcode: 'text', text: 'text' };
 
-export function FormScreen({ fields, values, onChange, fieldErrors }: FormScreenProps) {
+export function FormScreen({ fields, values, onChange, fieldErrors, showOptional }: FormScreenProps) {
   return (
     <div style={{ display: 'grid', gap: 16 }}>
       {fields.map((f) => (
@@ -22,6 +30,7 @@ export function FormScreen({ fields, values, onChange, fieldErrors }: FormScreen
           helperText={fieldErrors?.[f.name] || f.helperText}
           error={!!fieldErrors?.[f.name]}
           required={f.required}
+          showOptional={showOptional}
           value={values[f.name] ?? ''}
           onChange={(e) => onChange(f.name, e.target.value)}
         />

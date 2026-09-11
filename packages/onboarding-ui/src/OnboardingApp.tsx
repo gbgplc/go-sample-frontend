@@ -46,10 +46,21 @@ export function OnboardingApp({ transport, config }: OnboardingAppProps) {
       ? Math.round(((doneCount + (hasActive ? 0.5 : 0)) / stages.length) * 100)
       : 4;
 
+  // An upload can fail for the same reasons any other call can — an expired
+  // session, image storage refusing the file — and those failures have a
+  // screen to land on. Letting the rejection escape instead crashes the page
+  // with an unhandled OnboardingError, which is a worse outcome than the
+  // error it is reporting: the customer loses the journey rather than being
+  // told to start again.
   const handleUploadFile = async (file: File): Promise<string> => {
     if (!session.sessionId) return '';
-    const { attachmentRef } = await transport.uploadAttachment(session.sessionId, file);
-    return attachmentRef;
+    try {
+      const { attachmentRef } = await transport.uploadAttachment(session.sessionId, file);
+      return attachmentRef;
+    } catch (e) {
+      session.fail(e);
+      return '';
+    }
   };
 
   // Deferred idle: the customer hasn't started yet, so this is the app's own
@@ -244,6 +255,41 @@ export function OnboardingApp({ transport, config }: OnboardingAppProps) {
         onUploadFile={handleUploadFile}
         config={config}
       />
+
+      {/*
+        A way out of a screen that will not move.
+
+        A capture can fail for reasons the screen cannot fix — a document the
+        platform will not classify, an image upload the platform refuses —
+        and the customer is then stuck on a step that keeps saying something
+        went wrong. Starting over is the only remedy Go offers for a journey
+        that cannot proceed, and until now it was reachable only after the
+        app had already given up. Offering it on every screen means the
+        customer decides when to take it.
+
+        Deliberately quiet: a text button under the content, not a second
+        call to action competing with Continue. It is an escape hatch, not a
+        step in the journey.
+      */}
+      <button
+        type="button"
+        onClick={session.restart}
+        disabled={session.phase === 'submitting'}
+        style={{
+          display: 'block',
+          margin: '20px auto 0',
+          background: 'none',
+          border: 'none',
+          padding: 4,
+          font: 'inherit',
+          fontSize: 13,
+          color: 'var(--gbg-charcoal-400)',
+          textDecoration: 'underline',
+          cursor: session.phase === 'submitting' ? 'default' : 'pointer',
+        }}
+      >
+        Start again
+      </button>
     </AppShell>
   );
 }

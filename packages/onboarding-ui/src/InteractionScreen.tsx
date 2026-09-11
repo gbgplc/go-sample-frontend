@@ -133,6 +133,16 @@ export function InteractionScreen({
           values={formValues}
           onChange={(name, value) => setFormValues((v) => ({ ...v, [name]: value }))}
           fieldErrors={fieldErrors}
+          // Mark the optional fields only where the screen knows which is
+          // which. A live journey's `collects` gives every field an explicit
+          // true or false; the mock's fixtures omit the flag entirely, and
+          // marking there would label the whole form Optional — telling the
+          // customer something untrue. `undefined` is the absence of the
+          // data, which is why this tests for the property rather than its
+          // truthiness: a screen where every field is genuinely optional
+          // (Ridgeline's sign-up asks for four, all optional) is exactly
+          // where the marker earns its place.
+          showOptional={(interaction.collects || []).every((f) => f.required !== undefined)}
         />
       )}
 
