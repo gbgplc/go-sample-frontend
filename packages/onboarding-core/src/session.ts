@@ -90,6 +90,14 @@ export interface UseOnboardingSession extends SessionState {
   restart: () => void;
   /** Start a deferred journey (see the `deferStart` argument). No-op otherwise. */
   begin: () => void;
+  /**
+   * Report a failure raised outside submit — an attachment upload, say.
+   *
+   * Those calls do not go through {@link submit}, so a rejection there has
+   * nothing to catch it and escapes as an unhandled error, crashing the page
+   * over an error that has a screen to land on.
+   */
+  fail: (error: unknown) => void;
 }
 
 /**
@@ -365,5 +373,9 @@ export function useOnboardingSession(
     };
   }, [state.phase, state.sessionId, transport]);
 
-  return { ...state, submit, restart, begin };
+  const fail = useCallback((error: unknown) => {
+    dispatch({ type: 'FAILED', error: toEnvelope(error) });
+  }, []);
+
+  return { ...state, submit, restart, begin, fail };
 }

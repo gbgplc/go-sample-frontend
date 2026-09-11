@@ -11,6 +11,15 @@ export interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElemen
   label?: string;
   helperText?: string;
   error?: boolean;
+  /**
+   * Mark the fields that are not required with "Optional".
+   *
+   * Opt-in rather than automatic: a caller that does not know which of its
+   * fields are required leaves `required` unset on all of them, and an
+   * automatic marker would then label every field Optional — worse than
+   * saying nothing. Set it only where the requirement data is real.
+   */
+  showOptional?: boolean;
   style?: React.CSSProperties;
 }
 
@@ -20,6 +29,7 @@ export function TextField({
   helperText,
   error = false,
   required = false,
+  showOptional = false,
   disabled = false,
   style,
   ...rest
@@ -32,6 +42,25 @@ export function TextField({
       {label && (
         <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--gbg-charcoal-500)', marginBottom: 4 }}>
           {label}
+          {/*
+            "Optional" on the optional ones, rather than an asterisk on the
+            required ones. A journey can ask for a dozen fields of which two
+            are optional, and marking the exception is both less noise and the
+            more useful half to know: someone scanning the form is looking for
+            what they can skip, not for permission to fill a box in.
+
+            Not announced separately to a screen reader — the input's own
+            `required` already carries that, and a reader would otherwise hear
+            the state twice.
+          */}
+          {showOptional && !required && (
+            <span
+              aria-hidden="true"
+              style={{ fontWeight: 400, color: 'var(--gbg-charcoal-400)', marginLeft: 6 }}
+            >
+              Optional
+            </span>
+          )}
         </div>
       )}
       <input
