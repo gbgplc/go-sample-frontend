@@ -195,9 +195,17 @@ builds it:
   demos; swap `SessionStore` for Redis or similar before running more than
   one instance of the Java service.
 - **The verification record shown on the final screen is a design proposal**,
-  not a real payload — which fields a customer should actually see
-  (especially the deciding module on a referral or decline) is a compliance
-  decision, not yet made.
+  not a real payload. Which fields a customer should actually see was an open
+  compliance decision — as of 2026-09-11 it's been made: the final screen now
+  shows the journey name, reference, start/decision timestamps, total time,
+  route taken (the modules that actually ran, in order) and each module's own
+  result and run time. Built from real Go data where the live client has it
+  (`GoStateResponse.journeyInfo()` — nested at `context.process.journey` on
+  the live platform, not the response root the public docs describe — and
+  each step's `process.step.durationMilliSec`); the mock client's fixtures
+  already modelled this shape by hand and are unchanged. `ResultScreen.tsx`
+  renders it; deciding the *module* on a referral or decline specifically
+  (as opposed to the full list) is still open.
 
 ## 9. Where things are already documented — check here before asking
 

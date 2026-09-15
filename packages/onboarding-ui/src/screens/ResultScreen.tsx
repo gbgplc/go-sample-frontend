@@ -3,7 +3,6 @@ import { ModuleRun, SummaryRow } from '@gbg-go/onboarding-core';
 export interface ResultScreenProps {
   decision?: 'pass' | 'refer' | 'fail';
   timing?: string;
-  /** Carried for callers and the record; deliberately not rendered here. */
   moduleRuns?: ModuleRun[];
   summary?: SummaryRow[];
   recordNote?: string;
@@ -31,7 +30,15 @@ const ERROR_TONE = {
   label: 'Not completed',
 };
 
-export function ResultScreen({ decision, timing, summary, recordNote, accent, systemError }: ResultScreenProps) {
+const MODULE_STATE_TONE: Record<string, { color: string; label: string }> = {
+  Pass: { color: 'var(--gbg-green-700)', label: 'Pass' },
+  Fail: { color: 'var(--gbg-red-500)', label: 'Fail' },
+  Review: { color: 'var(--gbg-orange-700)', label: 'Review' },
+  Running: { color: 'var(--gbg-charcoal-400)', label: 'Running' },
+  Skipped: { color: 'var(--gbg-charcoal-400)', label: 'Skipped' },
+};
+
+export function ResultScreen({ decision, timing, moduleRuns, summary, recordNote, accent, systemError }: ResultScreenProps) {
   const tone = systemError ? ERROR_TONE : DECISION_TONE[decision || 'pass'];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -56,15 +63,56 @@ export function ResultScreen({ decision, timing, summary, recordNote, accent, sy
       </div>
 
       {/*
-        No module list. The customer is owed the outcome — approved, referred,
-        declined — not the internal check names that produced it. "Document
-        Classification: Review" beside "Your identity has been verified" reads
-        as a contradiction to anyone who does not know that Review here means
-        "ran, no adverse finding", and one raw node id
-        (mtv5fywgiy4eoqupxi) surfaces where a module has no display name at
-        all. The runs still travel on the record for the operator-facing view
-        and for support; this screen just does not render them.
+        The module list, shown by deliberate choice: this deployment has
+        decided the customer should see which checks ran and how each one
+        landed, not just the final outcome (see HANDOFF.md, "the verification
+        record shown on the final screen" — which fields to show here is a
+        compliance decision made per deployment). A raw node id in place of a
+        module name, or a Review state on an otherwise-passing record, are
+        real possibilities this view accepts as the cost of that choice.
       */}
+      {moduleRuns && moduleRuns.length > 0 && (
+        <div style={{ border: '1px solid var(--gbg-charcoal-200)', borderRadius: 8, overflow: 'hidden' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '12px 16px',
+              borderBottom: '1px solid var(--gbg-charcoal-200)',
+              background: 'var(--gbg-charcoal-50)',
+            }}
+          >
+            <i className="ph-bold ph-list-checks" style={{ fontSize: 15, color: 'var(--gbg-charcoal-400)' }} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--gbg-charcoal-700)' }}>Checks run</span>
+          </div>
+          <div style={{ padding: '4px 16px 12px' }}>
+            {moduleRuns.map((run, i) => {
+              const moduleTone = MODULE_STATE_TONE[run.state] ?? MODULE_STATE_TONE.Running!;
+              return (
+                <div
+                  key={`${run.label}-${i}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    justifyContent: 'space-between',
+                    gap: 16,
+                    padding: '8px 0',
+                    borderBottom: '1px solid var(--gbg-charcoal-100)',
+                  }}
+                >
+                  <span style={{ fontSize: 12, color: 'var(--gbg-charcoal-700)' }}>{run.label}</span>
+                  <span style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                    {run.ms && <span style={{ fontSize: 11, color: 'var(--gbg-charcoal-400)' }}>{run.ms}</span>}
+                    <span style={{ fontSize: 12, fontWeight: 600, color: moduleTone.color }}>{moduleTone.label}</span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {summary && summary.length > 0 && (
         <div style={{ border: '1px solid var(--gbg-charcoal-200)', borderRadius: 8, overflow: 'hidden' }}>
           <div
