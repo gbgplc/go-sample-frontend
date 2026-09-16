@@ -46,6 +46,11 @@ export function InteractionScreen({
   const [consentValues, setConsentValues] = useState<Record<string, boolean>>({});
   const [attachmentRef, setAttachmentRef] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  // Required fields left blank, found before submitting rather than after.
+  // Separate from the `fieldErrors` prop, which carries the server's 422: that
+  // one is cleared by the next submit, and these must survive it — the submit
+  // never happens.
+  const [missing, setMissing] = useState<Record<string, string>>({});
 
   // Resets on interaction.stage, not interaction.interactionId. Against a
   // live Go journey, interactionId is one value for the whole collection
@@ -65,6 +70,7 @@ export function InteractionScreen({
   useEffect(() => {
     setFormValues({});
     setAttachmentRef(null);
+    setMissing({});
     setConsentValues(
       Object.fromEntries((interaction.checks || []).map((c) => [c.name, c.defaultChecked ?? false]))
     );
@@ -79,11 +85,35 @@ export function InteractionScreen({
     }
   };
 
+  /**
+   * The required fields this screen collects that are still blank.
+   *
+   * Go states requirements per field in `collects`, and a screen that submits
+   * without them is accepted: the journey advances, the element is never sent,
+   * and the failure surfaces much later as "Required domain element
+   * 'CurrentAddress' data is missing from context" — on a screen the customer
+   * has already left, naming an element they never saw. Catching it here keeps
+   * the complaint next to the field it is about.
+   *
+   * `required` is undefined in the mock's fixtures, so only an explicit true
+   * blocks; whitespace alone is not an answer.
+   */
+  const blankRequiredFields = (): Record<string, string> =>
+    Object.fromEntries(
+      (interaction.collects || [])
+        .filter((f) => f.required === true && !(formValues[f.name] || '').trim())
+        .map((f) => [f.name, 'This is required.'])
+    );
+
   const handlePrimaryCta = () => {
     switch (interaction.kind) {
-      case 'form':
+      case 'form': {
+        const blank = blankRequiredFields();
+        setMissing(blank);
+        if (Object.keys(blank).length > 0) return;
         onSubmit(formValues);
         return;
+      }
       case 'consent':
         onSubmit(consentValues);
         return;
@@ -131,8 +161,15 @@ export function InteractionScreen({
         <FormScreen
           fields={interaction.collects || []}
           values={formValues}
-          onChange={(name, value) => setFormValues((v) => ({ ...v, [name]: value }))}
-          fieldErrors={fieldErrors}
+          onChange={(name, value) => {
+            setFormValues((v) => ({ ...v, [name]: value }));
+            // Drop this field's complaint as soon as it is answered, rather
+            // than making the customer press Continue again to find out.
+            setMissing(({ [name]: _cleared, ...rest }) => rest);
+          }}
+          // The server's 422 and this screen's own check render the same way;
+          // local wins on a conflict, being the more recent of the two.
+          fieldErrors={{ ...fieldErrors, ...missing }}
           // Mark the optional fields only where the screen knows which is
           // which. A live journey's `collects` gives every field an explicit
           // true or false; the mock's fixtures omit the flag entirely, and
