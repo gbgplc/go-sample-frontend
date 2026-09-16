@@ -68,8 +68,12 @@ export function ResultScreen({ decision, timing, moduleRuns, summary, recordNote
         landed, not just the final outcome (see HANDOFF.md, "the verification
         record shown on the final screen" — which fields to show here is a
         compliance decision made per deployment). A raw node id in place of a
-        module name, or a Review state on an otherwise-passing record, are
-        real possibilities this view accepts as the cost of that choice.
+        module name is a real possibility this view accepts as the cost of
+        that choice. A Review state used to be one too, for any module with
+        no positive/negative verdict of its own (Document Classification,
+        Extraction) — run.outcome now carries Go's own descriptive result
+        ("Document Classified", "Extraction Successful") in its place,
+        verified against a real completed run, 2026-09-16.
       */}
       {moduleRuns && moduleRuns.length > 0 && (
         <div style={{ border: '1px solid var(--gbg-charcoal-200)', borderRadius: 8, overflow: 'hidden' }}>
@@ -104,7 +108,9 @@ export function ResultScreen({ decision, timing, moduleRuns, summary, recordNote
                   <span style={{ fontSize: 12, color: 'var(--gbg-charcoal-700)' }}>{run.label}</span>
                   <span style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                     {run.ms && <span style={{ fontSize: 11, color: 'var(--gbg-charcoal-400)' }}>{run.ms}</span>}
-                    <span style={{ fontSize: 12, fontWeight: 600, color: moduleTone.color }}>{moduleTone.label}</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: moduleTone.color }}>
+                      {run.outcome ?? moduleTone.label}
+                    </span>
                   </span>
                 </div>
               );
