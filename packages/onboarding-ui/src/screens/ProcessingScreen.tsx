@@ -13,18 +13,36 @@ export interface ProcessingScreenProps {
    * screen renders, it does not decide when the work is done.
    */
   onSettled: () => void;
+  /**
+   * Nudge `onSettled` after 20s of no news.
+   *
+   * Only the mock needs it: its processing step reports `InProgress`
+   * indefinitely and nothing else would move it on. A live journey settles
+   * from the poll in `session.ts`, so the timer there is not a safety net but
+   * a race — Go can legitimately sit in `InProgress` for longer than 20s
+   * (Northbank's document classification runs past 30s while
+   * `LazySide2CollectionRequired` is still pending), and firing `onSettled`
+   * mid-journey submits an empty payload that Go rejects with "Required field
+   * is missing". The customer sees "Something went wrong" on a journey that
+   * was progressing normally.
+   */
+  settleAfterTimeout?: boolean;
   /** Rendered under the spinner once the wait runs long. */
   slowNotice?: string;
 }
 
-export function ProcessingScreen({ moduleRuns, accent, onSettled, slowNotice }: ProcessingScreenProps) {
-  // Kept only for a transport that reports no state of its own: without it the
-  // mock would spin forever. A live transport settles this screen from the
-  // poll in OnboardingApp long before the fallback fires.
+export function ProcessingScreen({
+  moduleRuns,
+  accent,
+  onSettled,
+  slowNotice,
+  settleAfterTimeout,
+}: ProcessingScreenProps) {
   useEffect(() => {
+    if (!settleAfterTimeout) return;
     const timer = setTimeout(onSettled, 20_000);
     return () => clearTimeout(timer);
-  }, [onSettled]);
+  }, [onSettled, settleAfterTimeout]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center' }}>
