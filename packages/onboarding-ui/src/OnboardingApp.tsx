@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@gbg-go/design-system';
-import { AppConfig, OnboardingTransport, useOnboardingSession } from '@gbg-go/onboarding-core';
+import { AppConfig, MockTransport, OnboardingTransport, useOnboardingSession } from '@gbg-go/onboarding-core';
 import { AppShell, ShellStage } from './shells/AppShell';
 import { InteractionScreen } from './InteractionScreen';
 import { ResultScreen } from './screens/ResultScreen';
@@ -254,6 +254,11 @@ export function OnboardingApp({ transport, config }: OnboardingAppProps) {
         onSubmit={session.submit}
         onUploadFile={handleUploadFile}
         config={config}
+        // The mock's processing step reports `InProgress` for ever, so its
+        // spinner needs a timer to move on. A live journey must not have one:
+        // it settles from the getState poll, and a timer racing that poll
+        // submits an empty payload mid-journey. See ProcessingScreen.
+        settleAfterTimeout={transport instanceof MockTransport}
       />
 
       {/*

@@ -25,6 +25,8 @@ export interface InteractionScreenProps {
   onUploadFile: (file: File) => Promise<string>;
   /** Supplies the intro screen's optional "who is asking, and why" content. */
   config?: AppConfig;
+  /** Passed to ProcessingScreen: only the mock needs its spinner timed out. */
+  settleAfterTimeout?: boolean;
 }
 
 /**
@@ -41,6 +43,7 @@ export function InteractionScreen({
   onSubmit,
   onUploadFile,
   config,
+  settleAfterTimeout,
 }: InteractionScreenProps) {
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [consentValues, setConsentValues] = useState<Record<string, boolean>>({});
@@ -219,6 +222,7 @@ export function InteractionScreen({
           moduleRuns={interaction.moduleRuns}
           accent={accent}
           onSettled={() => onSubmit({})}
+          settleAfterTimeout={settleAfterTimeout}
           slowNotice={slowNotice}
         />
       )}
