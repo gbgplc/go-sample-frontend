@@ -35,7 +35,10 @@ export function AppShell({ appName, mark, accent, accentSoft, helpLine, currentS
         <span className={styles.mobileMark} style={{ background: accent }}>
           {mark}
         </span>
-        <span className={styles.mobileName}>{appName}</span>
+        <span className={styles.mobileNameGroup}>
+          <span className={styles.mobileName}>GBG {appName}</span>
+          <span className={styles.subtitle}>Sample Applications</span>
+        </span>
         <span className={styles.mobileStage}>{currentStage}</span>
       </div>
       <div className={styles.mobileProgressTrack}>
@@ -48,7 +51,10 @@ export function AppShell({ appName, mark, accent, accentSoft, helpLine, currentS
             <span className={styles.railMark} style={{ background: accent }}>
               {mark}
             </span>
-            <span className={styles.railName}>{appName}</span>
+            <span className={styles.railNameGroup}>
+              <span className={styles.railName}>GBG {appName}</span>
+              <span className={styles.subtitle}>Sample Applications</span>
+            </span>
           </div>
           <div className={styles.stageList}>
             {stages.map((s) => (

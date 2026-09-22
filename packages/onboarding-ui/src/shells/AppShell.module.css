@@ -30,8 +30,15 @@
   flex: none;
 }
 
-.mobileName {
+.mobileNameGroup {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.mobileName {
   font-size: 14px;
   font-weight: 700;
   color: var(--gbg-charcoal-700);
@@ -136,10 +143,26 @@
   flex: none;
 }
 
+.railNameGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .railName {
   font-size: 15px;
   font-weight: 800;
   color: var(--gbg-charcoal-700);
+}
+
+/* Shared by the mobile bar and the desktop rail — "Sample Applications",
+   under the brand name, so nobody mistakes this for a production app. */
+.subtitle {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gbg-charcoal-400);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .stageList {
