@@ -6,10 +6,16 @@ Play** (online gaming) — each driving a GBG Go journey through a thin backend
 proxy, per `project/Front-end Handoff.dc.html`. Screens, copy and responsive
 behaviour follow `project/Market Onboarding Journeys.dc.html`.
 
-No backend microservice exists yet, so every app runs against a mock
-transport that implements the same REST contract a real Java or TypeScript
-service would (`packages/onboarding-core`) — flip one env var to point an app
-at a live service instead.
+Each app talks to a sample backend, which holds the GBG Go credentials and
+calls GBG Go for it. There are two, with the same REST contract:
+
+- [go-sample-backend-java](https://github.com/gbgplc/go-sample-backend-java) (Spring Boot)
+- [go-sample-backend-typescript](https://github.com/gbgplc/go-sample-backend-typescript) (Next.js)
+
+Each has an `api-implementation`, which calls the GBG Go REST API directly,
+and an `sdk-implementation`, built on the GBG Go Core SDK. Without a backend,
+an app runs on its own in-browser mock transport, which implements the same
+contract (`packages/onboarding-core`).
 
 ## Layout
 
@@ -47,32 +53,40 @@ Each app defaults to mock mode. To reach a specific designed outcome, add
 `?mock_scenario=blocked` on Ridgeline Play. (See each app's
 `onboarding.config.ts` for the full scenario list.)
 
-## Running against the Java backend
+## Running against a backend
 
-Copy `apps/<market>/.env.example` to `.env.local` in the same folder:
-
-```
-NEXT_PUBLIC_ONBOARDING_TRANSPORT=rest
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8082
-```
-
-Then restart that app's dev server. Without this file the app runs its own
+Copy `apps/<market>/.env.example` to `.env.local` in the same folder, then
+restart that app's dev server. Copy the file rather than writing it from
+Windows PowerShell with `>` or `Out-File`: those save it in an encoding
+Next.js ignores. Without a working `.env.local` the app runs its own
 in-browser mock and never reaches the backend — which looks like it is
 working, so it is worth checking first when a change to the service seems to
 have no effect.
 
-The backend ports are 8081 / 8082 / 8083, in the same market order as above.
+The example file points at the market's port on the backends' API
+implementation. Each market has its own ports, the same in both languages:
+
+| App | API implementation | SDK implementation |
+| --- | --- | --- |
+| Northbank | 8081 | 8091 |
+| Meridian Health | 8082 | 8092 |
+| Ridgeline Play | 8083 | 8093 |
+
+To use an SDK implementation, change `NEXT_PUBLIC_API_BASE_URL` to its port.
 `.env.local` is gitignored; delete it when you are done, or the app keeps
 using the backend for anyone running it on that machine.
 
-## Meridian Health against a live GBG Go journey
+## Live GBG Go journeys
 
-Meridian is wired to a published journey on the `gbggo4-demo` tenant and is
-the only market with one — Northbank and Ridgeline still carry placeholder
-resource IDs and must stay in mock mode. See the backend README for
-credentials and `./run.sh`.
+Each market's backend config names a published GBG Go journey, and the
+backend READMEs cover credentials and live mode. The GBG Go docs have a
+tutorial per app that builds its journey, so you can run an app against your
+own: see the
+[sample apps overview](https://docs.go.gbgplc.com/docs/go-v2/tutorials/sample-apps-overview).
 
-What the live journey does *not* have, which the mock does:
+### Meridian Health's live journey
+
+What Meridian Health's live journey does *not* have, which the mock does:
 
 - **No intro or "who are you registering?" screens.** It opens on document
   capture. The app renders its own welcome first (see below), so the customer
@@ -115,3 +129,6 @@ npm run typecheck
   in `useOnboardingSession`, once a second until the status leaves
   `InProgress`. Its own 20-second timer is only a backstop for a transport
   that reports no state, which is the sole reason the mock leaves that screen.
+  The timer only runs with the in-browser mock, so against a backend in
+  mock mode the screen never settles: it waits, then gives up after 90
+  seconds.
